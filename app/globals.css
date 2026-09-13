@@ -1,26 +1,256 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens.
+ *
+ * Every colour is defined once on :root (the dark palette, since dark is the
+ * default) and overridden inside [data-theme="light"]. Nothing in a component
+ * hardcodes a hex value, so the theme toggle is a single attribute flip on
+ * <html> with no per-component branching.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  /* Surfaces, from furthest back to closest to the reader. */
+  --surface-base: #0b0f16;
+  --surface-raised: #121823;
+  --surface-overlay: #182031;
+  --surface-hover: #1b2434;
+  /* Sector banding inside the table. Must differ from the card surface in BOTH
+     themes -- on light, --surface-overlay equals the card, so the band vanished. */
+  --surface-band: #1a2334;
+
+  /* Hairlines. Deliberately low-contrast: structure should be felt, not seen. */
+  --border-subtle: #1e2839;
+  --border-strong: #2c3950;
+
+  /* Text ramp. */
+  --text-primary: #eef2f8;
+  --text-secondary: #9aa8bd;
+  --text-muted: #63728a;
+
+  /* Performance colours. Paired with a glyph everywhere -- never colour alone. */
+  --gain: #34d399;
+  --gain-soft: rgba(52, 211, 153, 0.12);
+  --loss: #fb7185;
+  --loss-soft: rgba(251, 113, 133, 0.12);
+
+  --accent: #60a5fa;
+  --accent-soft: rgba(96, 165, 250, 0.12);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.12);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.22);
+
+  /*
+   * Categorical series colours for the sector chart, in fixed slot order.
+   *
+   * Taken from the reference categorical palette, deliberately skipping its
+   * green and red slots: those hues carry gain/loss meaning everywhere else on
+   * this page and must not double as a category identity.
+   *
+   * Validated as a set against this surface -- lightness band, chroma floor,
+   * adjacent-pair CVD separation (worst 8.4 protan), normal-vision separation
+   * (worst 19.3) and >=3:1 contrast all pass in dark mode.
+   */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #9085e9;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-base: #f6f7f9;
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-hover: #f1f4f8;
+  --surface-band: #eceff4;
+
+  --border-subtle: #e3e8ef;
+  --border-strong: #cdd5e0;
+
+  --text-primary: #111827;
+  --text-secondary: #556274;
+  --text-muted: #7d8899;
+
+  /* Darker than the dark-theme pair so both clear 4.5:1 on their own ground. */
+  --gain: #047857;
+  --gain-soft: rgba(4, 120, 87, 0.1);
+  --loss: #be123c;
+  --loss-soft: rgba(190, 18, 60, 0.1);
+
+  --accent: #1d4ed8;
+  --accent-soft: rgba(29, 78, 216, 0.1);
+  --warn: #a16207;
+  --warn-soft: rgba(161, 98, 7, 0.12);
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05), 0 6px 18px rgba(16, 24, 40, 0.06);
+
+  /*
+   * The same six hues re-stepped for the light surface -- a selected palette,
+   * not an automatic flip. Three of these sit below 3:1 on white, so the chart
+   * carries visible direct labels (the legend names and values) as relief.
+   */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #4a3aa7;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-surface-base: var(--surface-base);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-band: var(--surface-band);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-gain: var(--gain);
+  --color-gain-soft: var(--gain-soft);
+  --color-loss: var(--loss);
+  --color-loss-soft: var(--loss-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Never let the dense table push the whole page sideways. */
+  overflow-x: hidden;
+}
+
+/*
+ * Tabular figures for every number on the page.
+ *
+ * Proportional digits change width as prices tick, so a refreshing column
+ * visibly jitters. Tabular figures give each digit the same advance width and
+ * the column stays perfectly still.
+ */
+.tnum {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Micro-caps used for column headers and card labels. */
+.label-caps {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/*
+ * Update flash.
+ *
+ * A refreshed cell tints for ~700ms and fades out. It draws the eye to what
+ * actually changed without moving anything, which is what makes a 15-second
+ * refresh readable rather than distracting.
+ */
+@keyframes flash-gain {
+  0% { background-color: var(--gain-soft); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-loss {
+  0% { background-color: var(--loss-soft); }
+  100% { background-color: transparent; }
+}
+
+.flash-gain { animation: flash-gain 700ms ease-out; }
+.flash-loss { animation: flash-loss 700ms ease-out; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-raised) 0%,
+    var(--surface-hover) 50%,
+    var(--surface-raised) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 0.375rem;
+}
+
+/* Respect the reader's motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  .flash-gain,
+  .flash-loss,
+  .pulse-dot,
+  .skeleton {
+    animation: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/*
+ * Table rules.
+ *
+ * The holdings table uses `border-separate` because a collapsed border model
+ * breaks `position: sticky` on thead in Chrome. Borders therefore have to live
+ * on the cells rather than on the rows, which is what these rules do.
+ */
+.data-table thead th {
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.data-table tbody th,
+.data-table tbody td {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-table tbody tr.sector-row th,
+.data-table tbody tr.sector-row td {
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  background: var(--surface-band);
+}
+
+/* Hovering anywhere on a row lifts the pinned first cell with it. */
+.data-table tbody tr.holding-row:hover th,
+.data-table tbody tr.holding-row:hover td {
+  background: var(--surface-hover);
+}
+
+/* Restrained scrollbar for the horizontally scrolling table container. */
+.scroll-soft::-webkit-scrollbar { height: 10px; width: 10px; }
+.scroll-soft::-webkit-scrollbar-track { background: transparent; }
+.scroll-soft::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 3px solid var(--surface-raised);
+}
+.scroll-soft::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Visible focus ring for keyboard users on every interactive control. */
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
 }
