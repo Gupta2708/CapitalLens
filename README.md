@@ -157,19 +157,32 @@ brokerage view would need the transaction history.
 
 ## Deployment
 
-The app deploys to any Node host, Vercel included, with no configuration:
+The app deploys to any Node host with no configuration and no environment variables:
 
 ```bash
 npm run build
 npm start
 ```
 
-`/api/portfolio` is a dynamic Node-runtime route and must not be statically cached. Two things are
-worth knowing before deploying:
+### Vercel
 
-- The in-process cache resets on cold start (see above).
-- Both providers are more likely to rate-limit or block traffic from datacentre IP ranges than from
-  a local machine. If prices stop resolving after deployment, that is the first thing to check.
+Vercel needs nothing beyond importing the repository — framework detection, build command and
+output are all automatic. Nothing else (a separate backend, a container host, a worker) is required:
+the entire server side is one Next.js route handler.
+
+Three things are worth knowing before deploying:
+
+- **Function timeout.** A cold request fans out to 26 Yahoo quotes and 26 Google Finance pages and
+  takes ~20 seconds; warm requests settle to ~3s. The platform default of 10s would 504 on the first
+  request after every cold start, so `app/api/portfolio/route.ts` sets `maxDuration = 60`.
+- **Cache resets on cold start.** The TTL cache is in process memory, so a scaled-to-zero deployment
+  re-fetches far more often than a long-running server does — including the 45-minute fundamentals
+  scrape. Redis is the production fix and is deliberately out of scope here.
+- **Providers may block datacentre IPs.** Yahoo's chart endpoint and Google Finance are unofficial
+  and are markedly more likely to rate-limit or block a cloud IP range than a residential one. The
+  dashboard degrades honestly if that happens — cost basis intact, a "Prices unavailable" status and
+  em-dashes rather than invented numbers — but a deployed demo can legitimately show less live data
+  than the same code does locally. If prices stop resolving after deploying, check this first.
 
 ## Documentation
 
