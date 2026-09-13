@@ -4,23 +4,17 @@ import type { Holding } from "@/lib/finance/types";
  * The 26 active holdings from the assignment workbook
  * (`F9001561_ADDBA737E8_B72562937A.xlsx`, sheet "Priyanshu", rows 4-34).
  *
- * Rows 38-40 of the sheet (Infy, Happiest Mind, Easemytrip) sit BELOW the
- * total row and carry a "Sold Price" column -- they are exited positions and
- * are deliberately excluded. Including them would break the 1,543,060 total.
+ * Rows 38-40 (Infy, Happiest Mind, Easemytrip) sit below the total row with a
+ * "Sold Price" column and are exited positions, so they are excluded.
  *
- * `purchasePrice` and `quantity` are reproduced exactly as supplied. We have no
- * transaction dates, so no corporate-action adjustment is attempted -- see the
- * "source snapshot" limitation in TECHNICAL_NOTES.md.
+ * Prices and quantities are reproduced exactly; with no transaction dates in
+ * the workbook, no corporate-action adjustment is attempted. See the source
+ * snapshot limitation in TECHNICAL_NOTES.md.
  *
- * On the symbol columns: the sheet's `NSE/BSE` cell mixes NSE tickers with BSE
- * numeric codes, so there is no single transform that works. Every `priceSymbol`
- * below was verified against the Yahoo chart endpoint and returns an INR quote
- * on the stated exchange. Two traps found while verifying:
- *   - `532174.BO` (the ICICI BSE code) 404s, while `511577.BO` works, so
- *     numeric codes cannot be used blanket-style.
- *   - `541557.BO` returns HTTP 200 with the right company name but a price of
- *     ~1.06e10 on exchange "YHD" -- a wrong-instrument match. Fine Organic must
- *     use `FINEORG.BO`. `isUsableQuote` in the Yahoo provider is the backstop.
+ * The sheet's `NSE/BSE` cell mixes NSE tickers with BSE numeric codes, so no
+ * single transform works. Every `priceSymbol` below was verified to return an
+ * INR quote on the stated exchange: `532174.BO` 404s while `511577.BO` works,
+ * and `541557.BO` returns a wrong-instrument match.
  */
 export const HOLDINGS: Holding[] = [
   // --- Financial Sector -----------------------------------------------------
@@ -60,7 +54,7 @@ export const HOLDINGS: Holding[] = [
     quantity: 84,
     sourceExchangeCode: "532174",
     sourceExchange: "BSE",
-    // NOT "532174.BO" -- that symbol 404s on Yahoo.
+    // Not "532174.BO" -- that symbol 404s.
     priceSymbol: "ICICIBANK.BO",
     priceExchange: "BSE",
     fallbackPriceSymbol: "ICICIBANK.NS",
@@ -118,10 +112,9 @@ export const HOLDINGS: Holding[] = [
     sector: "Tech Sector",
     purchasePrice: 4775,
     quantity: 16,
-    // The sheet predates the rename: NSE moved LTIM -> LTM and the company is
-    // now LTM Limited. The source code is preserved; the quote uses the new
-    // ticker. Google has not populated P/E or EPS for LTM yet, so this row
-    // degrades at the field level while its price stays live.
+    // The sheet predates the rename: NSE moved LTIM -> LTM. Google has not
+    // populated P/E or EPS for the new ticker, so this row loses those two
+    // fields while its price stays live.
     sourceExchangeCode: "LTIM",
     sourceExchange: "NSE",
     priceSymbol: "LTM.NS",
@@ -370,7 +363,7 @@ export const HOLDINGS: Holding[] = [
     quantity: 16,
     sourceExchangeCode: "541557",
     sourceExchange: "BSE",
-    // NOT "541557.BO" -- resolves to an unrelated YHD listing at ~1.06e10.
+    // Not "541557.BO" -- resolves to an unrelated YHD listing at ~1.06e10.
     priceSymbol: "FINEORG.BO",
     priceExchange: "BSE",
     fallbackPriceSymbol: "FINEORG.NS",
@@ -407,7 +400,7 @@ export const HOLDINGS: Holding[] = [
   },
 ];
 
-/** Sanity constants asserted by tests/holdings.test.ts. */
+/** Asserted by tests/holdings.test.ts. */
 export const EXPECTED_HOLDING_COUNT = 26;
 export const EXPECTED_SECTOR_COUNT = 6;
 export const EXPECTED_TOTAL_INVESTMENT = 1_543_060;

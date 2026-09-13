@@ -6,11 +6,8 @@ import type { PortfolioResponse } from "@/lib/finance/types";
 import { ThemeToggle } from "./ThemeToggle";
 
 /**
- * Sticky top bar: identity on the left, data state on the right.
- *
- * The refresh state is intentionally a small quiet pill rather than a spinner
- * over the content -- the reader should be able to tell the data is live
- * without anything moving in their field of view.
+ * The refresh state is a small pill rather than a spinner over the content, so
+ * the data reads as live without anything moving.
  */
 export function DashboardHeader({
   meta,
@@ -27,18 +24,13 @@ export function DashboardHeader({
 }) {
   const intervalSeconds = Math.round((meta?.refreshIntervalMs ?? 15_000) / 1000);
 
-  /*
-   * The pill reports DATA health, not just HTTP health. A provider outage still
-   * returns 200 with the static portfolio intact, so keying this off the request
-   * alone would keep showing a confident "Live" while every price on screen is
-   * an em-dash.
-   */
+  // Reports data health, not HTTP health: a provider outage still returns 200,
+  // so keying off the request alone would show "Live" above a table of dashes.
   const priceProvider = meta?.providers.yahoo;
 
   return (
     <header className="sticky top-0 z-30 border-b border-border-subtle bg-surface-base/85 backdrop-blur-md">
       <div className="mx-auto flex min-h-[3.875rem] max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-5 lg:px-8">
-        {/* Brand. The icon tile brightens on hover; nothing rotates or bounces. */}
         <div className="group flex items-center gap-2.5">
           <span
             aria-hidden="true"
@@ -60,7 +52,6 @@ export function DashboardHeader({
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {/* Status pill. Four distinct states, never ambiguous. */}
           {hasError ? (
             <Badge tone="loss" title="The most recent refresh failed">
               <span className="live-dot" aria-hidden="true" /> Reconnecting
@@ -88,7 +79,6 @@ export function DashboardHeader({
             </Badge>
           ) : (
             <Badge tone="gain" title={`Auto-refreshing every ${intervalSeconds} seconds`}>
-              {/* Only the ring pulses; the dot itself stays steady. */}
               <span className="live-dot" aria-hidden="true" />
               Live
             </Badge>
@@ -115,9 +105,7 @@ export function DashboardHeader({
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              /* The spin is bound to the in-flight state, so repeated clicks
-                 cannot stack or restart it -- the button is disabled while a
-                 request is running. */
+              /* Bound to the in-flight state, so clicks cannot stack it. */
               className={isRefreshing ? "icon-spinning" : "icon-rotate"}
               aria-hidden="true"
             >

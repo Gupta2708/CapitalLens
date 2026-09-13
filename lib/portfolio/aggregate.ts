@@ -8,23 +8,13 @@ import type {
 import { gainLossPct, isFiniteNumber, safeDivide } from "./calculations";
 
 /**
- * Rolls a set of holding rows up into valuation totals.
+ * Rolls holdings up into valuation totals.
  *
- * THE RULE THIS FILE EXISTS TO ENFORCE
- * ------------------------------------
- * When some holdings cannot be priced, there are two different populations in
- * play and they must never be mixed:
- *
- *   all holdings    -> totalInvestment   (the full cost basis)
- *   priced holdings -> totalPresentValue (what we can actually value today)
- *
- * Computing `totalPresentValue - totalInvestment` across those two populations
- * silently reports the unpriced positions as a total loss. With 2 of 26
- * holdings unpriced, that understates the portfolio by their entire cost basis.
- *
- * So gain/loss subtracts `pricedInvestment`, and the return percentage divides
- * by `pricedInvestment`. `valuationCoveragePct` and `completeness` then tell the
- * UI how much of the portfolio those figures actually describe.
+ * Two populations are in play whenever a holding cannot be priced:
+ * `totalInvestment` covers all holdings, `totalPresentValue` only the priced
+ * ones. Subtracting across them would report every unpriced holding as a total
+ * loss, so gain/loss and return both use `pricedInvestment` as their base and
+ * `valuationCoveragePct` reports how much of the portfolio that represents.
  */
 export function buildTotals(rows: PortfolioHoldingView[]): ValuationTotals {
   let totalInvestment = 0;
@@ -35,7 +25,6 @@ export function buildTotals(rows: PortfolioHoldingView[]): ValuationTotals {
   for (const row of rows) {
     totalInvestment += row.investment;
 
-    // A row counts as priced only if it produced a usable present value.
     if (isFiniteNumber(row.presentValue)) {
       pricedInvestment += row.investment;
       totalPresentValue += row.presentValue;
@@ -52,7 +41,6 @@ export function buildTotals(rows: PortfolioHoldingView[]): ValuationTotals {
     pricedInvestment,
     totalPresentValue,
     totalGainLoss,
-    // Denominator is the priced basis, never the full basis.
     totalGainLossPct: gainLossPct(totalGainLoss, pricedInvestment) ?? 0,
     pricedHoldingsCount,
     totalHoldingsCount: rows.length,
@@ -61,11 +49,7 @@ export function buildTotals(rows: PortfolioHoldingView[]): ValuationTotals {
   };
 }
 
-/**
- * Groups rows into the six workbook sectors, each with its own totals computed
- * under the same priced-subset rule. Sector order follows the workbook rather
- * than being sorted, so the dashboard reads like the source document.
- */
+/** Sector order follows the workbook rather than being sorted. */
 export function buildSectorSummaries(
   rows: PortfolioHoldingView[],
 ): SectorSummary[] {
@@ -73,8 +57,6 @@ export function buildSectorSummaries(
   for (const sector of SECTORS) bySector.set(sector, []);
 
   for (const row of rows) {
-    // `?? []` keeps an unexpected sector value from throwing; SECTORS is the
-    // source of truth and a stray row would simply be dropped from grouping.
     bySector.get(row.sector)?.push(row);
   }
 
@@ -86,10 +68,7 @@ export function buildSectorSummaries(
   );
 }
 
-/**
- * Best and worst performers by return percentage, considering priced rows only.
- * Returns nulls when fewer than one row can be valued.
- */
+/** Ranks priced rows only, so an unpriced holding is absent rather than last. */
 export function findPerformers(rows: PortfolioHoldingView[]): {
   best: PortfolioHoldingView | null;
   worst: PortfolioHoldingView | null;

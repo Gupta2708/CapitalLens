@@ -1,10 +1,4 @@
-/**
- * First-load placeholders.
- *
- * These appear ONLY before the first successful response. Background refreshes
- * keep the real table on screen -- swapping in skeletons every 15 seconds would
- * make the dashboard unreadable.
- */
+/** Shown only before the first response; refreshes keep the real table. */
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`skeleton ${className}`} aria-hidden="true" />;
 }
@@ -12,8 +6,7 @@ export function Skeleton({ className = "" }: { className?: string }) {
 export function DashboardSkeleton() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="Loading portfolio">
-      {/* Summary cards -- same padding and line heights as the real cards, so
-          nothing reflows when the data lands. */}
+      {/* Same padding and line heights as the real cards, so nothing reflows. */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div key={index} className="card px-5 py-[1.125rem]">

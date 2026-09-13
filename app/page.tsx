@@ -32,8 +32,8 @@ export default function DashboardPage() {
       />
 
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-5 sm:px-5 lg:px-8">
-        {/* Skeletons appear only before the first response. Every later refresh
-            updates the live table in place. */}
+        {/* Skeletons only before the first response; later refreshes update
+            the live table in place. */}
         {isInitialLoading ? (
           <DashboardSkeleton />
         ) : !data ? (
@@ -77,7 +77,7 @@ export default function DashboardPage() {
   );
 }
 
-/** Shown only when the very first request fails and there is nothing to display. */
+/** Only when the first request fails and there is nothing to show. */
 function ErrorState({
   error,
   onRetry,

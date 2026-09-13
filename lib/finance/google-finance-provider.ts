@@ -5,35 +5,17 @@ import { parseProviderNumber } from "@/lib/portfolio/calculations";
 import type { FundamentalsResult } from "./types";
 
 /**
- * Google Finance fundamentals adapter (P/E ratio and EPS).
- *
- * Google exposes no official API for this, so the assignment explicitly allows
- * scraping. All of that scraping lives in this file; nothing downstream knows
- * the data arrived as HTML.
- *
- * Parsing strategy: match the LABEL TEXT, not the CSS class
- * ---------------------------------------------------------
- * The key-stats block looks like this, with obfuscated class names:
- *
- *   <div class="gyFHrc">
- *     <div class="mfs7Fc">P/E ratio</div>
- *     <div class="P6K39c">13.84</div>
- *   </div>
- *
- * Those class names are build artifacts and rotate without notice. The visible
- * labels ("P/E ratio", "EPS") are product copy and change far more rarely, so
- * the parser finds the label node and reads its sibling value. When Google
- * eventually reshuffles the markup this returns null and the dashboard degrades
- * to an em-dash -- it does not crash and it does not invent a number.
+ * Google Finance fundamentals adapter (P/E and EPS). Google publishes no
+ * official API for these, so the quote page is fetched and parsed here -- and
+ * only here; nothing downstream knows the data arrived as HTML.
  */
 
 const GOOGLE_FINANCE_BASE =
   process.env.GOOGLE_FINANCE_BASE ?? "https://www.google.com/finance/quote";
 
 /**
- * 45 minutes. P/E and EPS move on quarterly earnings, not by the second, so
- * scraping them on the 15-second price cadence would be ~180x the requests for
- * no new information -- and a fast route to being rate-limited or blocked.
+ * P/E and EPS move on quarterly earnings, so scraping them at the 15-second
+ * price cadence would be ~180x the requests for identical values.
  */
 const FUNDAMENTALS_TTL_MS = 45 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -50,25 +32,22 @@ const REQUEST_HEADERS = {
 } as const;
 
 /**
- * Finds a key-stat by its visible label and returns the adjacent value text.
+ * Finds a key stat by its visible label and returns the adjacent value.
  *
- * Exported so the parser can be unit-tested against a saved fixture without
- * touching the network.
+ * Matching label text rather than CSS classes is deliberate: the class names
+ * on that block are build artifacts that rotate without notice, while the
+ * labels are product copy. When the markup does change this returns null and
+ * the UI shows an em-dash, rather than a wrong number.
  */
 export function extractLabelledStat(html: string, label: string): string | null {
   const $ = cheerio.load(html);
-
-  // Google renders each stat as a label node and a value node that are
-  // siblings inside a small wrapper. Find the element whose own text is exactly
-  // the label, then read the next element in the same row.
   let value: string | null = null;
 
   $("div").each((_, element) => {
-    if (value !== null) return false; // already found; stop walking
+    if (value !== null) return false;
 
     const node = $(element);
-    // `.text()` on a parent would concatenate children, so only consider nodes
-    // whose trimmed text matches the label exactly.
+    // Exact match only: `.text()` on a parent would concatenate its children.
     if (node.text().trim() !== label) return undefined;
 
     const sibling = node.next("div");
@@ -85,7 +64,6 @@ export function extractLabelledStat(html: string, label: string): string | null 
   return value;
 }
 
-/** Parses P/E and EPS out of a Google Finance quote page. */
 export function parseFundamentalsHtml(html: string): {
   peRatio: number | null;
   latestEarningsEps: number | null;
@@ -100,9 +78,7 @@ export function parseFundamentalsHtml(html: string): {
 async function fetchFundamentalsUncached(
   symbol: string,
 ): Promise<FundamentalsResult> {
-  const url = `${GOOGLE_FINANCE_BASE}/${symbol}`;
-
-  const response = await fetch(url, {
+  const response = await fetch(`${GOOGLE_FINANCE_BASE}/${symbol}`, {
     headers: REQUEST_HEADERS,
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     cache: "no-store",
@@ -112,8 +88,9 @@ async function fetchFundamentalsUncached(
     throw new Error(`Google Finance responded ${response.status} for ${symbol}`);
   }
 
-  const html = await response.text();
-  const { peRatio, latestEarningsEps } = parseFundamentalsHtml(html);
+  const { peRatio, latestEarningsEps } = parseFundamentalsHtml(
+    await response.text(),
+  );
 
   return {
     symbol,
@@ -121,8 +98,8 @@ async function fetchFundamentalsUncached(
     latestEarningsEps,
     fetchedAt: new Date().toISOString(),
     source: "google-finance",
-    // A page that loads but exposes neither figure is "unavailable", not an
-    // error: LTM (the renamed LTIMindtree) is exactly this case today.
+    // A page that loads but publishes neither figure is unavailable, not an
+    // error: several listings genuinely have no P/E.
     freshness:
       peRatio === null && latestEarningsEps === null ? "unavailable" : "live",
   };
@@ -165,7 +142,6 @@ export async function fetchFundamentals(
   });
 }
 
-/** Bounded-concurrency batch fetch. Individual failures never reject. */
 export async function fetchManyFundamentals(
   symbols: string[],
 ): Promise<Map<string, FundamentalsResult>> {

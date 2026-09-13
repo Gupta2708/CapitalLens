@@ -19,11 +19,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Applies the saved theme before first paint.
- *
- * Without this the page would render in the default dark palette and then snap
- * to light for a reader who chose light -- a visible flash on every load. It
- * has to be inline and synchronous in <head> to land ahead of paint.
+ * Applies the saved theme before first paint. Has to be inline and synchronous
+ * in <head>, or a reader who chose light sees a flash of dark on every load.
  */
 const themeScript = `
 (function () {
@@ -33,7 +30,7 @@ const themeScript = `
       document.documentElement.setAttribute("data-theme", saved);
     }
   } catch (e) {
-    /* Private mode or blocked storage: fall through to the dark default. */
+    /* Blocked storage: fall through to the dark default. */
   }
 })();
 `;

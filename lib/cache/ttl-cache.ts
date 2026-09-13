@@ -1,15 +1,9 @@
 /**
- * A tiny in-memory TTL cache.
+ * In-memory TTL cache. Expired entries are retained and readable via
+ * `getStale` so a failed provider call can fall back to the last known value
+ * and label it, rather than showing nothing.
  *
- * The one feature that matters beyond a plain Map: expired entries are RETAINED
- * and readable via `getStale`. When a provider call fails we would rather show
- * the last known price clearly labelled as stale than show nothing at all --
- * but the caller has to ask for it explicitly, so stale data can never be
- * mistaken for live data.
- *
- * Limitation, documented in TECHNICAL_NOTES.md: this lives in process memory.
- * On serverless it is per-instance and resets on cold start. Redis would be the
- * production answer; it is deliberately not introduced for this assignment.
+ * On serverless this is per-instance and resets on cold start.
  */
 export interface CacheEntry<T> {
   value: T;
@@ -22,7 +16,6 @@ export class TtlCache<T> {
 
   constructor(private readonly ttlMs: number) {}
 
-  /** Returns the value only while fresh. Expired entries yield undefined. */
   get(key: string): T | undefined {
     const entry = this.store.get(key);
     if (!entry) return undefined;
@@ -30,10 +23,7 @@ export class TtlCache<T> {
     return entry.value;
   }
 
-  /**
-   * Returns the last known value regardless of age, with its timestamp, so the
-   * caller can mark it stale. Used only on the provider-failure path.
-   */
+  /** Last known value regardless of age, with its timestamp. */
   getStale(key: string): CacheEntry<T> | undefined {
     return this.store.get(key);
   }
@@ -47,7 +37,6 @@ export class TtlCache<T> {
     });
   }
 
-  /** Test helper; not used by application code. */
   clear(): void {
     this.store.clear();
   }

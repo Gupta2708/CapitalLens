@@ -22,14 +22,9 @@ import {
 export const REFRESH_INTERVAL_MS = 15_000;
 
 /**
- * Resolves a usable quote for one holding.
- *
- * Preference is always the holding's own source exchange -- a BSE-coded row
- * should be priced on BSE. Only if that symbol fails do we try the other
- * exchange, and the caller records that it happened so the UI can say so. The
- * two exchanges quote the same company at slightly different prices, so
- * silently substituting one for the other would misreport where the number
- * came from.
+ * Prefers the holding's own source exchange and falls back to the other only
+ * on failure. The two exchanges quote the same company at slightly different
+ * prices, so the caller records when the fallback was used.
  */
 async function resolveQuote(
   holding: Holding,
@@ -48,7 +43,7 @@ async function resolveQuote(
     }
   }
 
-  // Nothing usable: return the primary attempt so its error survives.
+  // Return the primary attempt so its error survives.
   return {
     quote: primary ?? {
       symbol: holding.priceSymbol,
@@ -112,7 +107,7 @@ function toView(
   };
 }
 
-/** Rolls per-item freshness up into one provider status for the UI banner. */
+/** Per-item freshness rolled up into one status for the UI banner. */
 function summarizeStatus(states: Array<"live" | "stale" | "unavailable">): ProviderStatus {
   if (states.length === 0) return "error";
   const usable = states.filter((state) => state !== "unavailable").length;
@@ -128,12 +123,8 @@ function mostRecent(timestamps: Array<string | null>): string | null {
 }
 
 /**
- * Builds the full dashboard payload.
- *
- * Prices and fundamentals are fetched as two independent batches in parallel,
- * each already internally failure-isolated, so a total Google outage still
- * returns live prices and a total Yahoo outage still returns the static
- * portfolio with its fundamentals.
+ * Prices and fundamentals are fetched as two independent batches, each already
+ * failure-isolated, so an outage in one still returns everything from the other.
  */
 export async function buildPortfolio(): Promise<PortfolioResponse> {
   const totalInvestment = HOLDINGS.reduce(
@@ -145,7 +136,7 @@ export async function buildPortfolio(): Promise<PortfolioResponse> {
     (symbol): symbol is string => symbol !== null,
   );
 
-  // allSettled: neither provider can reject the whole dashboard.
+  // Neither provider can reject the whole dashboard.
   const [quotesOutcome, fundamentalsOutcome] = await Promise.allSettled([
     fetchQuotes(HOLDINGS.map((holding) => holding.priceSymbol)),
     fetchManyFundamentals(googleSymbols),
@@ -181,14 +172,12 @@ export async function buildPortfolio(): Promise<PortfolioResponse> {
     rows.map((row) => row.fundamentalsFreshness),
   );
 
-  // Plain-language notices; the UI renders these verbatim.
   const notices: string[] = [];
 
   const unpricedCount = rows.length - summary.pricedHoldingsCount;
   if (summary.pricedHoldingsCount === 0 && rows.length > 0) {
-    // Total outage reads differently from a partial one: there is no priced
-    // subset to qualify, so say the value cannot be computed at all rather
-    // than claiming it covers "0 holdings".
+    // A total outage has no priced subset to qualify, so it reads differently
+    // from a partial one.
     notices.push(
       `Live prices are unavailable for all ${rows.length} holdings, so current value and returns cannot be calculated right now. ` +
         `Your holdings and cost basis are unaffected.`,

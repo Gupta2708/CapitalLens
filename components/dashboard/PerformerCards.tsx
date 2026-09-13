@@ -21,8 +21,7 @@ function PerformerRow({
   const pct = holding?.gainLossPct ?? null;
   const trend = trendOf(pct);
 
-  // Bar length is proportional to the larger mover, so the two rows are
-  // directly comparable rather than each filling its own width.
+  // Scaled against the larger mover so the two rows are comparable.
   const width =
     pct === null || scale === 0
       ? 0
@@ -47,8 +46,8 @@ function PerformerRow({
         </div>
       </div>
 
-      {/* A short magnitude bar, capped well short of the card width: at full
-          bleed it reads as an underline on the name rather than as data. */}
+      {/* Capped short of the card width; at full bleed it reads as an
+          underline on the name rather than as data. */}
       <div
         className="mt-2 h-[2px] w-full max-w-[8.5rem] overflow-hidden rounded-full bg-surface-hover"
         aria-hidden="true"
@@ -70,12 +69,7 @@ function PerformerRow({
   );
 }
 
-/**
- * Best and worst holding by return.
- *
- * Both are ranked over priced holdings only. An unpriced holding is absent from
- * the ranking rather than sorting to the bottom as if it had lost everything.
- */
+/** Ranked over priced holdings only; unpriced rows are absent, not last. */
 export function PerformerCards({
   best,
   worst,

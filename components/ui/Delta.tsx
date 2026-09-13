@@ -3,15 +3,12 @@
 import { trendOf } from "@/lib/format/currency";
 
 /**
- * Renders a gain/loss value.
+ * Colour is never the only signal: each value also carries a glyph and an
+ * explicit sign. Missing data renders muted rather than red -- "could not
+ * price this" is not a loss.
  *
- * Colour is never the only signal: every value also carries a directional
- * glyph and an explicit sign, so the table stays readable in greyscale and for
- * readers with colour-vision deficiency. Missing data renders muted, never red,
- * because "we could not price this" is not a loss.
- *
- * The delta-gain / delta-loss classes let an ancestor (a hovered table row)
- * strengthen the colour without this component knowing anything about hover.
+ * The delta-gain / delta-loss classes let a hovered row strengthen the colour
+ * without this component knowing about hover.
  */
 export function Delta({
   value,

@@ -12,22 +12,12 @@ import {
 import type { SectorSummary } from "@/lib/finance/types";
 
 /**
- * Sector allocation.
+ * Sector allocation as a donut, with the legend doubling as direct labels:
+ * three of the light-mode series colours fall below 3:1 on white, so identity
+ * has to be readable without relying on the swatch.
  *
- * Form: a part-to-whole split across six categories, so a donut is the honest
- * shape -- the reader is asking "how is the money divided", not "rank these".
- *
- * The legend is not decoration. Three of the light-mode series colours fall
- * below 3:1 contrast on white, so the palette carries a relief obligation:
- * identity must be readable without relying on the swatch. Every slice is
- * therefore directly labelled with its name, weight and return, and the
- * sector table below is the full table view of the same numbers.
- *
- * Colour encodes sector identity only. Return is encoded separately, in the
- * gain/loss tokens with a glyph, so the two meanings never collide in one mark.
- *
- * Hovering either the donut or a legend row highlights the other. That link is
- * what turns two adjacent displays into one readable object.
+ * Colour encodes sector identity only -- return is shown separately in the
+ * gain/loss tokens, so the two meanings never collide in one mark.
  */
 const SERIES_VARS = [
   "var(--series-1)",
@@ -81,13 +71,11 @@ export function AllocationChart({ sectors }: { sectors: SectorSummary[] }) {
                 nameKey="name"
                 innerRadius={53}
                 outerRadius={78}
-                /* 2px of surface between slices, per the mark spec. */
                 paddingAngle={2}
                 stroke="var(--surface-1)"
                 strokeWidth={2}
                 onMouseEnter={(_, index) => setActiveIndex(index)}
-                /* One draw on mount, then never again -- a chart that
-                   re-animates on every 15s poll is unreadable. */
+                /* Draws once on mount; re-animating on every poll is unreadable. */
                 isAnimationActive
                 animationDuration={520}
                 animationBegin={0}
@@ -106,9 +94,8 @@ export function AllocationChart({ sectors }: { sectors: SectorSummary[] }) {
             </PieChart>
           </ResponsiveContainer>
 
-          {/* Centre of the donut: the total, or details of the hovered slice.
-              Swapping content in place avoids a floating tooltip that would
-              cover the very slices the reader is comparing. */}
+          {/* Swapping the centre content avoids a tooltip covering the slices
+              being compared. */}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
             {active ? (
               <>
@@ -136,8 +123,7 @@ export function AllocationChart({ sectors }: { sectors: SectorSummary[] }) {
           </div>
         </div>
 
-        {/* Direct labels -- the relief that makes the light palette legible,
-            and the other half of the linked hover. */}
+        {/* Direct labels, and the other half of the linked hover. */}
         <ul className="min-w-0 flex-1 space-y-0.5">
           {data.map((entry, index) => (
             <li

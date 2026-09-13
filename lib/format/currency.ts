@@ -1,18 +1,11 @@
 /**
- * Display formatting.
+ * The single place where a number becomes text, which is what keeps "NaN" and
+ * "undefined" off the screen. Every formatter is null-safe.
  *
- * Every formatter here is null-safe and returns an em-dash for missing data.
- * Nothing in the UI formats a number by hand, which is how "NaN" and
- * "undefined" are kept off the screen: there is exactly one place where a
- * number becomes text.
- *
- * Grouping uses the `en-IN` locale, so values carry true Indian digit grouping
- * (15,43,060 rather than 1,543,060). The assignment brief writes its examples
- * with Western grouping, but it asks for "Indian currency formatting" -- this
- * follows the instruction rather than the typo in the sample.
+ * Grouping uses `en-IN`, so values carry true Indian digit grouping
+ * (15,43,060 rather than 1,543,060).
  */
 
-/** Rendered whenever a value is genuinely unavailable. */
 export const EM_DASH = "—";
 
 const inrFormatter = new Intl.NumberFormat("en-IN", {
@@ -38,29 +31,26 @@ function usable(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-/** Whole-rupee currency, e.g. "₹15,43,060". */
+/** e.g. "₹15,43,060" */
 export function formatCurrency(value: number | null | undefined): string {
   if (!usable(value)) return EM_DASH;
   return inrFormatter.format(value);
 }
 
-/** Two-decimal currency for prices, e.g. "₹1,700.15". */
+/** e.g. "₹1,700.15" */
 export function formatPrice(value: number | null | undefined): string {
   if (!usable(value)) return EM_DASH;
   return inrPreciseFormatter.format(value);
 }
 
-/** Signed currency for gain/loss, e.g. "+₹10,508" / "-₹8,644". */
+/** e.g. "+₹10,508" / "-₹8,644" */
 export function formatSignedCurrency(value: number | null | undefined): string {
   if (!usable(value)) return EM_DASH;
   const sign = value > 0 ? "+" : value < 0 ? "-" : "";
   return `${sign}${inrFormatter.format(Math.abs(value))}`;
 }
 
-/**
- * Compact Indian notation for summary cards: "₹15.43L", "₹1.20Cr".
- * Falls back to full formatting below one lakh, where compacting adds nothing.
- */
+/** "₹15.43L" / "₹1.20Cr"; falls back to full formatting below one lakh. */
 export function formatCompactCurrency(value: number | null | undefined): string {
   if (!usable(value)) return EM_DASH;
 
@@ -76,35 +66,31 @@ export function formatCompactCurrency(value: number | null | undefined): string 
   return `${sign}${inrFormatter.format(magnitude)}`;
 }
 
-/**
- * Percentage from a FRACTION, e.g. 0.1410 -> "14.10%".
- * Calculations store fractions; the multiply by 100 happens only here.
- */
+/** Takes a fraction: 0.1410 -> "14.10%". */
 export function formatPercent(value: number | null | undefined): string {
   if (!usable(value)) return EM_DASH;
   return `${(value * 100).toFixed(2)}%`;
 }
 
-/** Signed percentage, e.g. "+14.10%" / "-13.19%". */
+/** e.g. "+14.10%" / "-13.19%" */
 export function formatSignedPercent(value: number | null | undefined): string {
   if (!usable(value)) return EM_DASH;
   const sign = value > 0 ? "+" : "";
   return `${sign}${(value * 100).toFixed(2)}%`;
 }
 
-/** Bare number for ratios such as P/E and EPS. */
+/** For ratios such as P/E and EPS. */
 export function formatNumber(value: number | null | undefined): string {
   if (!usable(value)) return EM_DASH;
   return plainFormatter.format(value);
 }
 
-/** Integer quantity. */
 export function formatQuantity(value: number | null | undefined): string {
   if (!usable(value)) return EM_DASH;
   return new Intl.NumberFormat("en-IN").format(value);
 }
 
-/** Clock time for the "last updated" line, e.g. "14:32:07". */
+/** e.g. "14:32:07" */
 export function formatTime(iso: string | null | undefined): string {
   if (!iso) return EM_DASH;
   const date = new Date(iso);
@@ -117,7 +103,7 @@ export function formatTime(iso: string | null | undefined): string {
   });
 }
 
-/** Sign bucket used to pick colour and glyph. Null stays neutral. */
+/** Picks colour and glyph; null stays neutral. */
 export function trendOf(value: number | null | undefined): "up" | "down" | "flat" {
   if (!usable(value) || value === 0) return "flat";
   return value > 0 ? "up" : "down";

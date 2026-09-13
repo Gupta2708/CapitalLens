@@ -26,9 +26,7 @@ function Card({
   return (
     <div
       className="card card-interactive rise-in relative overflow-hidden px-5 py-[1.125rem]"
-      /* A 40ms stagger: enough to read as a sequence, short enough that the
-         whole row has settled before the eye finishes crossing it. Entrance
-         runs once on mount and never on a polling refresh. */
+      /* Runs once on mount, never on a polling refresh. */
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <span
@@ -36,7 +34,6 @@ function Card({
         aria-hidden="true"
       />
       <p className="label-caps text-[0.75rem] leading-none">{label}</p>
-      {/* Metric scales with the viewport instead of jumping at a breakpoint. */}
       <p className="tnum mt-[0.5rem] text-[clamp(1.5rem,1.28rem+0.78vw,2rem)] font-semibold leading-[1.08] tracking-[-0.02em] text-text-primary">
         {value}
       </p>
@@ -48,20 +45,15 @@ function Card({
 }
 
 /**
- * The four headline figures.
- *
- * When some holdings could not be priced, the current-value and return cards
- * say so directly in their subtitle. A reader must never see a total whose
- * population differs from what they assume.
+ * When some holdings could not be priced, the cards say so in their subtitle.
+ * A reader must never see a total whose population differs from what they
+ * assume it covers.
  */
 export function SummaryCards({ summary }: { summary: ValuationTotals }) {
   const isPartial = summary.completeness === "partial";
 
-  /*
-   * With nothing priced, every valuation figure is genuinely unknown -- not
-   * zero. Showing a confident "0" would read as "your portfolio is worth
-   * nothing", so these fall back to an em-dash instead.
-   */
+  // Nothing priced means the figures are unknown, not zero: a confident "0"
+  // would read as the portfolio being worthless.
   const hasValuation = summary.pricedHoldingsCount > 0;
   const presentValue = hasValuation ? summary.totalPresentValue : null;
   const gainLoss = hasValuation ? summary.totalGainLoss : null;
@@ -126,7 +118,6 @@ export function SummaryCards({ summary }: { summary: ValuationTotals }) {
         value={<Delta value={returnPct} format={formatSignedPercent} />}
         sub={
           <span className="tnum">
-            {/* Naming the denominator is the point: it is the priced basis. */}
             {hasValuation
               ? `on ${formatCurrency(summary.pricedInvestment)} invested`
               : "Awaiting live prices"}

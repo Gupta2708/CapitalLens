@@ -6,13 +6,10 @@ type Theme = "dark" | "light";
 const STORAGE_KEY = "capitallens-theme";
 
 /**
- * The theme lives on `<html data-theme>`, not in React state.
- *
- * That attribute is written before hydration by the inline script in
- * layout.tsx, so React is not its owner -- it is an external system. Reading it
- * with useSyncExternalStore rather than syncing it into state in an effect
- * keeps one source of truth, avoids a cascading render on mount, and means the
- * control can never disagree with the page it is describing.
+ * The theme lives on `<html data-theme>`, written before hydration by the
+ * inline script in layout.tsx. React is not its owner, so it is read with
+ * useSyncExternalStore rather than synced into state -- one source of truth,
+ * and no cascading render on mount.
  */
 function subscribe(onChange: () => void): () => void {
   const observer = new MutationObserver(onChange);
@@ -42,12 +39,8 @@ export function ThemeToggle() {
     const next: Theme = isLight ? "dark" : "light";
     const root = document.documentElement;
 
-    /*
-     * Enable the cross-theme colour transition only for the length of the
-     * switch. It lives on a stamped attribute rather than permanently on every
-     * element, because a blanket transition would override the per-element
-     * transitions that carry transforms and would make hover feedback sluggish.
-     */
+    // Stamped on only for the length of the switch; permanently on every
+    // element it would override the per-element transitions carrying transforms.
     root.setAttribute("data-theme-switching", "");
     root.setAttribute("data-theme", next);
     window.setTimeout(() => root.removeAttribute("data-theme-switching"), 260);
@@ -63,15 +56,12 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      /* switch semantics: aria-checked communicates the state itself, rather
-         than relying on the label to describe what a press would do. */
       role="switch"
       aria-checked={isLight}
       aria-label="Light theme"
       title={`Switch to ${isLight ? "dark" : "light"} theme`}
       className="theme-switch"
     >
-      {/* Track icons sit behind the knob and mark each end of the travel. */}
       <span
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 flex items-center justify-between px-[0.3125rem] text-text-muted"
@@ -83,7 +73,6 @@ export function ThemeToggle() {
       <span
         className="theme-knob"
         aria-hidden="true"
-        /* The knob slides the width of the track minus its own width. */
         style={{ ["--knob-x" as string]: isLight ? "1.25rem" : "0rem" }}
       >
         <span className={`theme-icon ${isLight ? "theme-icon-hidden" : "theme-icon-shown"}`}>

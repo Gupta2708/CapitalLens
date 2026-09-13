@@ -67,8 +67,7 @@ function compare(
   const left = a[key];
   const right = b[key];
 
-  // Unpriced rows always sink to the bottom regardless of direction -- they are
-  // missing data, not the worst performers.
+  // Unpriced rows sink regardless of direction: missing data, not worst.
   const leftMissing = left === null || !Number.isFinite(left);
   const rightMissing = right === null || !Number.isFinite(right);
   if (leftMissing && rightMissing) return 0;
@@ -78,7 +77,7 @@ function compare(
   return ((left as number) - (right as number)) * factor;
 }
 
-/** A price cell that tints briefly when its value moves. */
+/** Tints briefly when the price moves. */
 function PriceCell({ holding }: { holding: PortfolioHoldingView }) {
   const flash = useFlashOnChange(holding.cmp);
 
@@ -104,7 +103,6 @@ function HoldingRow({ holding }: { holding: PortfolioHoldingView }) {
 
   return (
     <tr className="holding-row">
-      {/* Pinned identity column: the row stays identifiable while scrolling. */}
       <th
         scope="row"
         className="holding-name sticky left-0 z-10 whitespace-nowrap bg-surface-raised px-3 py-2 text-left font-medium"
@@ -173,7 +171,7 @@ function HoldingRow({ holding }: { holding: PortfolioHoldingView }) {
   );
 }
 
-/** The banded summary row that opens each sector block. */
+/** The banded row that opens each sector block. */
 function SectorRow({ sector }: { sector: SectorSummary }) {
   return (
     <tr className="sector-row">
@@ -225,10 +223,8 @@ function SectorRow({ sector }: { sector: SectorSummary }) {
 }
 
 /**
- * The sector-grouped holdings table.
- *
- * Sorting reorders rows WITHIN each sector and never across sectors -- the
- * grouping is the structure of the portfolio, not a sort order to be discarded.
+ * Sorting reorders rows within each sector and never across them: the grouping
+ * is the structure of the portfolio, not a sort order to be discarded.
  */
 export function PortfolioTable({
   sectors,
@@ -326,23 +322,12 @@ export function PortfolioTable({
         </div>
       </div>
 
-      {/*
-        This container is the table's own scroll viewport, vertical and
-        horizontal. It has to be: setting `overflow-x` alone makes the vertical
-        axis compute to `auto` as well, which turns the div into the sticky
-        containing block -- a page-level `top` offset would then push the header
-        down INSIDE the container and cover the first row. Owning both axes
-        makes the behaviour explicit, pins the header to the top of the table
-        rather than the page, and keeps the page itself from ever scrolling
-        sideways.
-      */}
+      {/* Owns both scroll axes deliberately: setting overflow-x alone makes
+          overflow-y compute to auto, which would make this the sticky
+          containing block and push the header over the first row. */}
       <div className="scroll-soft max-h-[70vh] min-h-[16rem] overflow-auto">
-        {/*
-          border-separate, not border-collapse: a collapsed border model breaks
-          `position: sticky` on thead in Chrome -- the header detaches and the
-          first body row renders underneath it. Spacing is zeroed so it still
-          looks like a collapsed table.
-        */}
+        {/* border-separate, not border-collapse: a collapsed border model
+            breaks position:sticky on thead in Chrome. */}
         <table className="data-table w-full min-w-[1100px] border-separate border-spacing-0 text-[0.8125rem]">
           <thead className="sticky top-0 z-20 bg-surface-raised">
             <tr>

@@ -1,34 +1,18 @@
 @import "tailwindcss";
 
-/* ==========================================================================
-   Motion tokens
-   --------------------------------------------------------------------------
-   One vocabulary for every interaction in the app. Durations stay inside the
-   120-220ms band for anything the pointer triggers, so feedback reads as
-   immediate rather than animated. Nothing here loops.
-   ========================================================================== */
+/* Motion tokens. Pointer-triggered feedback stays in the 120-220ms band so it
+   reads as immediate rather than animated. */
 :root {
   --duration-fast: 120ms;
   --duration-normal: 190ms;
   --duration-slow: 320ms;
 
-  /* Standard: symmetric, for colour and background changes. */
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
-  /* Out: decelerating, for movement that should feel like it settles. */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ==========================================================================
-   Colour tokens
-   --------------------------------------------------------------------------
-   Dark is the default and lives on :root; [data-theme="light"] overrides it.
-   No component hardcodes a colour, so the toggle is one attribute flip.
-
-   Surfaces are three deliberate levels:
-     0  page ground
-     1  panels and cards
-     2  interactive inner rows, controls, hover states
-   ========================================================================== */
+/* Colour tokens. Dark is the default; [data-theme="light"] overrides it.
+   Surfaces run 0 (page) -> 1 (panels) -> 2/3 (inner rows, controls, hover). */
 :root {
   color-scheme: dark;
 
@@ -44,7 +28,6 @@
   --surface-hover: var(--surface-3);
   --surface-band: #161e2b;
 
-  /* Borders: structure should be felt, not seen -- until you interact. */
   --border-subtle: #1d2636;
   --border-strong: #2a374d;
   --border-hover: #3a4a64;
@@ -53,7 +36,7 @@
   --text-secondary: #97a5ba;
   --text-muted: #616f87;
 
-  /* Performance colours. Always paired with a glyph -- never colour alone. */
+  /* Always paired with a glyph -- never colour alone. */
   --gain: #34d399;
   --gain-strong: #6ee7b7;
   --gain-soft: rgba(52, 211, 153, 0.12);
@@ -73,15 +56,14 @@
   --warn-soft: rgba(251, 191, 36, 0.1);
   --warn-border: rgba(251, 191, 36, 0.28);
 
-  /* Elevation. Dark mode leans on surface luminance; shadow stays restrained. */
+  /* Dark mode leans on surface luminance; shadow stays restrained. */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.28);
 
-  /* Categorical series for the sector chart, in fixed slot order.
-     The reference palette's green and red slots are deliberately skipped:
-     those hues already mean gain and loss everywhere else on this page.
-     Validated in both themes for lightness band, chroma, adjacent-pair CVD
-     separation and contrast. */
+  /* Categorical series for the sector chart, in fixed slot order. The
+     reference palette's green and red slots are skipped: those hues already
+     mean gain and loss here. Validated in both themes for CVD separation
+     and contrast. */
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
@@ -93,8 +75,8 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  /* Designed for light, not inverted from dark: a slightly cool off-white
-     ground so near-white cards read as raised without needing heavy shadow. */
+  /* Designed for light, not inverted: a cool off-white ground so near-white
+     cards read as raised without heavy shadow. */
   --surface-0: #f5f7fa;
   --surface-1: #ffffff;
   --surface-2: #f4f6f9;
@@ -110,12 +92,12 @@
   --border-strong: #cfd6e0;
   --border-hover: #b3bdcc;
 
-  /* Deep slate rather than pure black -- easier to read at small sizes. */
+  /* Deep slate rather than pure black, which is easier at small sizes. */
   --text-primary: #16202e;
   --text-secondary: #556172;
   --text-muted: #7a8698;
 
-  /* Stepped for a light ground: both clear 4.5:1 as text on white. */
+  /* Both clear 4.5:1 as text on white. */
   --gain: #047857;
   --gain-strong: #065f46;
   --gain-soft: rgba(4, 120, 87, 0.1);
@@ -138,8 +120,8 @@
   --shadow-1: 0 1px 2px rgba(16, 24, 40, 0.05);
   --shadow-2: 0 2px 4px rgba(16, 24, 40, 0.06), 0 8px 20px rgba(16, 24, 40, 0.07);
 
-  /* The same six hues re-stepped for a light surface -- a selected palette.
-     Three fall below 3:1 here, so the chart carries direct labels as relief. */
+  /* The same six hues re-stepped for a light surface. Three fall below 3:1
+     here, so the chart carries direct labels as relief. */
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
@@ -181,16 +163,9 @@ body {
   overflow-x: hidden;
 }
 
-/* --------------------------------------------------------------------------
-   Theme switching
-   --------------------------------------------------------------------------
-   The crossfade is scoped to the moment of the switch instead of living on
-   every element permanently. A blanket `transition` on `*` would otherwise
-   override the per-element transitions that carry transforms, and would make
-   hover feedback sluggish. ThemeToggle stamps this attribute, then clears it.
-   `transition: all` is avoided throughout -- only the properties that actually
-   change between themes are listed.
-   -------------------------------------------------------------------------- */
+/* Scoped to the moment of the switch: a permanent blanket transition would
+   override the per-element ones that carry transforms. ThemeToggle stamps this
+   attribute and clears it. */
 [data-theme-switching],
 [data-theme-switching] * {
   transition:
@@ -201,21 +176,14 @@ body {
   transition-delay: 0s !important;
 }
 
-/* ==========================================================================
-   Typography helpers
-   ========================================================================== */
-
-/* Tabular figures for every number on the page. Proportional digits change
-   width as prices tick, so a refreshing column visibly jitters; these hold
-   each digit to the same advance width and the column stays still. */
+/* Tabular figures for every number. Proportional digits change width as prices
+   tick, so a refreshing column visibly jitters. */
 .tnum {
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-/* Small uppercase label. Reserved for metadata, table headings and card
-   labels -- never for descriptive prose. Tracking is deliberately modest;
-   wide tracking at this size costs more legibility than it buys. */
+/* Reserved for metadata, table headings and card labels -- never prose. */
 .label-caps {
   font-size: 0.75rem;
   font-weight: 600;
@@ -225,12 +193,7 @@ body {
   transition: color var(--duration-fast) var(--ease-standard);
 }
 
-/* ==========================================================================
-   Entrance
-   --------------------------------------------------------------------------
-   Runs once on first paint, never on a polling refresh. Movement is 5px --
-   enough to register as arriving, too little to read as animation.
-   ========================================================================== */
+/* Runs once on first paint, never on a polling refresh. */
 @keyframes rise-in {
   from {
     opacity: 0;
@@ -246,13 +209,8 @@ body {
   animation: rise-in var(--duration-slow) var(--ease-out) backwards;
 }
 
-/* ==========================================================================
-   Live-value flash
-   --------------------------------------------------------------------------
-   A refreshed cell tints briefly and fades. This is what makes a 15-second
-   refresh legible: it marks what actually moved without shifting anything.
-   Only cells whose value changed receive it.
-   ========================================================================== */
+/* Marks what actually moved on a refresh, without shifting anything. Only
+   cells whose value changed receive it. */
 @keyframes flash-gain {
   0% { background-color: var(--gain-soft); }
   100% { background-color: transparent; }
@@ -266,8 +224,7 @@ body {
 .flash-gain { animation: flash-gain 620ms var(--ease-out); }
 .flash-loss { animation: flash-loss 620ms var(--ease-out); }
 
-/* Live indicator: the ring pulses, the dot itself stays put and fully opaque,
-   so the badge reads as steady rather than blinking. */
+/* Only the ring pulses; the dot stays steady so the badge does not blink. */
 @keyframes live-ring {
   0% { transform: scale(1); opacity: 0.55; }
   70% { transform: scale(2.6); opacity: 0; }
@@ -292,12 +249,7 @@ body {
   animation: live-ring 2.4s var(--ease-out) infinite;
 }
 
-/* ==========================================================================
-   Skeleton
-   --------------------------------------------------------------------------
-   Matches the final geometry so nothing reflows when data lands. A gentle
-   opacity wave rather than a travelling gradient.
-   ========================================================================== */
+/* Matches the final geometry so nothing reflows when data lands. */
 @keyframes skeleton-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }
@@ -309,12 +261,9 @@ body {
   animation: skeleton-pulse 1.6s var(--ease-standard) infinite;
 }
 
-/* ==========================================================================
-   Interactive surfaces
-   ========================================================================== */
+/* Interactive surfaces */
 
-/* Panel-level card. Hover feedback is gated behind a real pointer so touch
-   devices never latch into a stuck hover state after a tap. */
+/* Hover is gated behind a real pointer so a tap cannot latch a stuck state. */
 .card {
   background: var(--surface-1);
   border: 1px solid var(--border-subtle);
@@ -334,7 +283,6 @@ body {
     box-shadow: var(--shadow-2);
   }
 
-  /* The accent rail widens slightly instead of the card changing colour. */
   .card-interactive:hover .card-rail {
     opacity: 1;
     width: 3px;
@@ -352,7 +300,7 @@ body {
     opacity var(--duration-normal) var(--ease-standard);
 }
 
-/* Inner interactive row: level 2 surface, no movement, just a quiet wash. */
+/* Inner row: a quiet wash, no movement. */
 .row-interactive {
   border-radius: 0.5rem;
   transition:
@@ -391,7 +339,6 @@ body {
     color: var(--text-primary);
   }
 
-  /* The icon nudges rather than the button moving. */
   .icon-button:hover:not(:disabled) .icon-rotate {
     transform: rotate(25deg);
   }
@@ -409,8 +356,7 @@ body {
   transition: transform var(--duration-normal) var(--ease-out);
 }
 
-/* One controlled rotation per refresh, restarted only when a request is
-   actually in flight -- it cannot be spammed by repeated clicks. */
+/* Runs only while a request is in flight, so clicks cannot spam it. */
 @keyframes spin-once {
   to { transform: rotate(360deg); }
 }
@@ -419,7 +365,7 @@ body {
   animation: spin-once 900ms var(--ease-standard) infinite;
 }
 
-/* Touch targets stay finger-sized on coarse pointers. */
+/* Finger-sized on coarse pointers. */
 @media (pointer: coarse) {
   .icon-button {
     height: 2.5rem;
@@ -427,9 +373,7 @@ body {
   }
 }
 
-/* ==========================================================================
-   Theme switch
-   ========================================================================== */
+/* Theme switch */
 .theme-switch {
   position: relative;
   display: inline-flex;
@@ -469,7 +413,6 @@ body {
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow-1);
   color: var(--text-primary);
-  /* The knob slides; the icons inside it cross-fade and rotate. */
   transition:
     transform var(--duration-normal) var(--ease-out),
     background-color var(--duration-normal) var(--ease-standard);
@@ -501,9 +444,7 @@ body {
   }
 }
 
-/* ==========================================================================
-   Search field
-   ========================================================================== */
+/* Search field */
 .search-field {
   border: 1px solid var(--border-subtle);
   background: var(--surface-2);
@@ -522,7 +463,6 @@ body {
 
 .search-field:focus-within {
   border-color: var(--accent);
-  /* A 3px ring, not a glow. */
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
@@ -541,13 +481,8 @@ body {
   outline: none;
 }
 
-/* ==========================================================================
-   Holdings table
-   --------------------------------------------------------------------------
-   `border-separate` is required: a collapsed border model breaks
-   `position: sticky` on thead in Chrome -- the header detaches and the first
-   body row renders underneath it. Borders therefore live on the cells.
-   ========================================================================== */
+/* `border-separate` is required -- a collapsed border model breaks
+   position:sticky on thead in Chrome -- so borders live on the cells. */
 .data-table thead th {
   border-bottom: 1px solid var(--border-strong);
 }
@@ -572,8 +507,7 @@ body {
   }
 }
 
-/* Row hover. Background only -- lifting or resizing a row in a dense table
-   makes the whole grid jitter as the pointer travels down it. */
+/* Background only: lifting a row in a dense table makes the grid jitter. */
 @media (hover: hover) and (pointer: fine) {
   .data-table tbody tr.holding-row:hover th,
   .data-table tbody tr.holding-row:hover td {
@@ -584,12 +518,10 @@ body {
     color: var(--text-primary);
   }
 
-  /* 2px edge marker drawn as an inset shadow, so it costs no layout. */
   .data-table tbody tr.holding-row:hover th:first-child {
     box-shadow: inset 2px 0 0 0 var(--accent);
   }
 
-  /* Performance figures strengthen slightly on their own row. */
   .data-table tbody tr.holding-row:hover .delta-gain {
     color: var(--gain-strong);
   }
@@ -645,9 +577,7 @@ body {
   color: var(--accent);
 }
 
-/* ==========================================================================
-   Chart / legend linking
-   ========================================================================== */
+/* Chart / legend linking */
 .legend-row {
   border-radius: 0.375rem;
   transition:
@@ -663,8 +593,7 @@ body {
   }
 }
 
-/* Non-hovered rows recede, but stay readable -- this is a de-emphasis, not
-   a hide. */
+/* De-emphasis, not a hide. */
 .legend-row[data-dimmed="true"] {
   opacity: 0.45;
 }
@@ -681,16 +610,13 @@ body {
   transform: scale(1.2);
 }
 
-/* Recharts draws sector paths; the transition keeps the hover emphasis smooth. */
 .recharts-sector {
   transition:
     opacity var(--duration-fast) var(--ease-standard),
     filter var(--duration-fast) var(--ease-standard);
 }
 
-/* ==========================================================================
-   Movers
-   ========================================================================== */
+/* Movers */
 @media (hover: hover) and (pointer: fine) {
   .mover-row:hover .mover-name {
     color: var(--text-primary);
@@ -710,16 +636,14 @@ body {
   transition: transform var(--duration-normal) var(--ease-out);
 }
 
-/* Proportional strength bar under each mover. Width is set inline. */
+/* Width is set inline. */
 .mover-bar {
   height: 2px;
   border-radius: 999px;
   transition: width var(--duration-slow) var(--ease-out);
 }
 
-/* ==========================================================================
-   Notice banner
-   ========================================================================== */
+/* Notice banner */
 @keyframes notice-in {
   from { opacity: 0; transform: translateY(-3px); }
   to { opacity: 1; transform: none; }
@@ -729,7 +653,7 @@ body {
   animation: notice-in var(--duration-slow) var(--ease-out);
 }
 
-/* The icon settles once as the banner arrives, then never moves again. */
+/* Settles once as the banner arrives, then never moves again. */
 @keyframes notice-icon-in {
   from { transform: scale(0.7); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
@@ -739,12 +663,7 @@ body {
   animation: notice-icon-in 380ms var(--ease-out) 80ms backwards;
 }
 
-/* ==========================================================================
-   Focus
-   --------------------------------------------------------------------------
-   focus-visible only, so a mouse click never leaves a ring behind but every
-   keyboard path is clearly traceable.
-   ========================================================================== */
+/* focus-visible only: no ring after a mouse click, every keyboard path shown. */
 :where(a, button, input, select, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -756,9 +675,7 @@ body {
   outline-offset: 2px;
 }
 
-/* ==========================================================================
-   Scrollbars
-   ========================================================================== */
+/* Scrollbars */
 .scroll-soft::-webkit-scrollbar { height: 10px; width: 10px; }
 .scroll-soft::-webkit-scrollbar-track { background: transparent; }
 .scroll-soft::-webkit-scrollbar-thumb {
@@ -769,12 +686,8 @@ body {
 }
 .scroll-soft::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
 
-/* ==========================================================================
-   Reduced motion
-   --------------------------------------------------------------------------
-   Movement and looping are removed; colour feedback is kept, because the
-   value-change flash carries information rather than decoration.
-   ========================================================================== */
+/* Movement and looping are removed, but the value-change flash is kept: it
+   carries information rather than decoration. */
 @media (prefers-reduced-motion: reduce) {
   .rise-in,
   .notice-banner,
@@ -810,9 +723,8 @@ body {
   }
 }
 
-/* The hovered donut slice lifts outward. `transform-box: view-box` puts the
-   origin at the centre of the SVG viewport -- which is the centre of the donut
-   -- so the slice grows radially instead of sliding. */
+/* `transform-box: view-box` puts the origin at the donut centre, so the slice
+   grows radially instead of sliding. */
 .recharts-sector.slice-active {
   transform: scale(1.045);
   transform-origin: center;

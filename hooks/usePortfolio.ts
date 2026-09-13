@@ -7,11 +7,10 @@ const DEFAULT_INTERVAL_MS = 15_000;
 
 export interface UsePortfolioState {
   data: PortfolioResponse | null;
-  /** True only before the first successful response. Drives the skeleton. */
+  /** True only before the first successful response. */
   isInitialLoading: boolean;
-  /** True during a background refresh, while `data` still holds the last result. */
   isRefreshing: boolean;
-  /** Set when the most recent attempt failed. Previous data is kept on screen. */
+  /** Set when the most recent attempt failed; previous data stays on screen. */
   error: string | null;
   /** False while the tab is hidden and polling is suspended. */
   isPolling: boolean;
@@ -19,22 +18,12 @@ export interface UsePortfolioState {
 }
 
 /**
- * Polls /api/portfolio on a fixed cadence.
+ * Polls /api/portfolio.
  *
- * Three behaviours here are deliberate and worth knowing:
- *
- * 1. Requests never overlap. The next tick is scheduled AFTER the previous
- *    response settles, not by a blind setInterval. A slow 20-second response on
- *    a 15-second interval would otherwise stack requests indefinitely and
- *    multiply load on the upstream providers.
- *
- * 2. Polling suspends while the tab is hidden and resumes with an immediate
- *    refresh on return. A backgrounded tab left open overnight issues no
- *    requests at all.
- *
- * 3. Previous data survives both refreshes and failures. The table is never
- *    unmounted mid-session, so values update in place with no layout shift and
- *    a transient network blip does not blank the dashboard.
+ * Requests never overlap -- the next tick is scheduled after the previous one
+ * settles rather than on a blind interval, so a slow response cannot stack
+ * requests. Polling suspends while the tab is hidden, and previous data
+ * survives both refreshes and failures so the table never blanks.
  */
 export function usePortfolio(): UsePortfolioState {
   const [data, setData] = useState<PortfolioResponse | null>(null);
@@ -43,8 +32,7 @@ export function usePortfolio(): UsePortfolioState {
   const [error, setError] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(true);
 
-  // Refs rather than state: these coordinate the loop and must never trigger
-  // a re-render or be captured stale inside the timeout closure.
+  // Refs, not state: these coordinate the loop and must not trigger renders.
   const inFlightRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -59,7 +47,6 @@ export function usePortfolio(): UsePortfolioState {
   }, []);
 
   const fetchPortfolio = useCallback(async () => {
-    // Guard 1: never start a second request while one is in flight.
     if (inFlightRef.current) return;
     inFlightRef.current = true;
 
@@ -84,7 +71,7 @@ export function usePortfolio(): UsePortfolioState {
       setData(payload);
       setError(null);
 
-      // Let the server dictate the cadence rather than hardcoding it twice.
+      // The server owns the cadence rather than it being hardcoded twice.
       if (typeof payload.meta?.refreshIntervalMs === "number") {
         intervalRef.current = payload.meta.refreshIntervalMs;
       }
@@ -104,12 +91,8 @@ export function usePortfolio(): UsePortfolioState {
   }, []);
 
   /**
-   * Runs one fetch, then schedules the next relative to its COMPLETION.
-   *
-   * The recursion goes through a ref rather than referencing the callback
-   * directly: the timeout closure would otherwise capture the identity of the
-   * function at schedule time, which is exactly the stale-closure bug that
-   * makes long-lived polling loops stop responding to changes.
+   * The recursion goes through a ref so the timeout closure cannot capture a
+   * stale copy of this callback.
    */
   const runRef = useRef<() => Promise<void>>(async () => {});
 
@@ -128,22 +111,20 @@ export function usePortfolio(): UsePortfolioState {
     mountedRef.current = true;
     runRef.current = runAndSchedule;
 
-    // Kick off on the next tick rather than inline. Calling it synchronously in
-    // the effect body would set state during the effect and cascade a render.
+    // Next tick, not inline: setting state synchronously inside an effect body
+    // cascades a render.
     timeoutRef.current = setTimeout(() => {
       void runRef.current();
     }, 0);
 
     function handleVisibilityChange() {
       if (document.hidden) {
-        // Suspend: cancel the pending tick and let any in-flight request finish.
         clearPendingTimeout();
         setIsPolling(false);
         return;
       }
 
-      // Resume with an immediate refresh so the reader never looks at a stale
-      // figure while waiting out the remainder of an interval.
+      // Refresh immediately rather than waiting out the remaining interval.
       setIsPolling(true);
       void runAndSchedule();
     }

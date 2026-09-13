@@ -4,12 +4,8 @@ import { formatPercent } from "@/lib/format/currency";
 import type { PortfolioResponse } from "@/lib/finance/types";
 
 /**
- * Explains, in plain language, anything the reader should know before trusting
- * the numbers above: unpriced holdings, stale prices, missing fundamentals, a
- * failed refresh.
- *
- * Renders nothing when everything is healthy, so a normal session is not
- * cluttered by a permanently visible status strip.
+ * Anything the reader should know before trusting the numbers above. Renders
+ * nothing when everything is healthy.
  */
 export function NoticeBanner({
   meta,
