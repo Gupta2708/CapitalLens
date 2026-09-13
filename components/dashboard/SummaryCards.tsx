@@ -14,22 +14,35 @@ function Card({
   label,
   value,
   sub,
-  accentClass = "",
+  railClass = "bg-border-strong",
+  index,
 }: {
   label: string;
   value: React.ReactNode;
   sub: React.ReactNode;
-  accentClass?: string;
+  railClass?: string;
+  index: number;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border-subtle bg-surface-raised p-5 shadow-[var(--shadow-card)]">
-      {/* 2px accent rail: colour-codes the card without tinting the whole surface. */}
-      <span className={`absolute inset-y-0 left-0 w-[2px] ${accentClass}`} aria-hidden="true" />
-      <p className="label-caps">{label}</p>
-      <p className="tnum mt-2.5 text-[1.75rem] font-semibold leading-none tracking-tight text-text-primary">
+    <div
+      className="card card-interactive rise-in relative overflow-hidden px-5 py-[1.125rem]"
+      /* A 40ms stagger: enough to read as a sequence, short enough that the
+         whole row has settled before the eye finishes crossing it. Entrance
+         runs once on mount and never on a polling refresh. */
+      style={{ animationDelay: `${index * 40}ms` }}
+    >
+      <span
+        className={`card-rail absolute inset-y-0 left-0 w-[2px] ${railClass}`}
+        aria-hidden="true"
+      />
+      <p className="label-caps text-[0.75rem] leading-none">{label}</p>
+      {/* Metric scales with the viewport instead of jumping at a breakpoint. */}
+      <p className="tnum mt-[0.5rem] text-[clamp(1.5rem,1.28rem+0.78vw,2rem)] font-semibold leading-[1.08] tracking-[-0.02em] text-text-primary">
         {value}
       </p>
-      <p className="mt-2.5 text-xs text-text-secondary">{sub}</p>
+      <p className="mt-[0.3125rem] text-[0.8125rem] leading-tight text-text-secondary">
+        {sub}
+      </p>
     </div>
   );
 }
@@ -55,16 +68,19 @@ export function SummaryCards({ summary }: { summary: ValuationTotals }) {
   const returnPct = hasValuation ? summary.totalGainLossPct : null;
 
   const trend = trendOf(gainLoss);
+  const performanceRail =
+    trend === "up" ? "bg-gain" : trend === "down" ? "bg-loss" : "bg-border-strong";
 
   const coverageNote = isPartial
     ? `${summary.pricedHoldingsCount} of ${summary.totalHoldingsCount} holdings priced`
     : `All ${summary.totalHoldingsCount} holdings priced`;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
       <Card
+        index={0}
         label="Total Investment"
-        accentClass="bg-accent"
+        railClass="bg-accent"
         value={formatCompactCurrency(summary.totalInvestment)}
         sub={
           <span className="tnum">
@@ -74,8 +90,9 @@ export function SummaryCards({ summary }: { summary: ValuationTotals }) {
       />
 
       <Card
+        index={1}
         label="Current Value"
-        accentClass="bg-accent"
+        railClass="bg-accent"
         value={formatCompactCurrency(presentValue)}
         sub={
           isPartial ? (
@@ -87,11 +104,10 @@ export function SummaryCards({ summary }: { summary: ValuationTotals }) {
       />
 
       <Card
+        index={2}
         label="Total Gain / Loss"
-        accentClass={trend === "up" ? "bg-gain" : trend === "down" ? "bg-loss" : "bg-border-strong"}
-        value={
-          <Delta value={gainLoss} format={formatSignedCurrency} />
-        }
+        railClass={performanceRail}
+        value={<Delta value={gainLoss} format={formatSignedCurrency} />}
         sub={
           <span>
             {!hasValuation
@@ -104,11 +120,10 @@ export function SummaryCards({ summary }: { summary: ValuationTotals }) {
       />
 
       <Card
+        index={3}
         label="Total Return"
-        accentClass={trend === "up" ? "bg-gain" : trend === "down" ? "bg-loss" : "bg-border-strong"}
-        value={
-          <Delta value={returnPct} format={formatSignedPercent} />
-        }
+        railClass={performanceRail}
+        value={<Delta value={returnPct} format={formatSignedPercent} />}
         sub={
           <span className="tnum">
             {/* Naming the denominator is the point: it is the priced basis. */}

@@ -31,7 +31,7 @@ export default function DashboardPage() {
         onRefresh={refresh}
       />
 
-      <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6">
+      <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-5 sm:px-5 lg:px-8">
         {/* Skeletons appear only before the first response. Every later refresh
             updates the live table in place. */}
         {isInitialLoading ? (
@@ -39,12 +39,12 @@ export default function DashboardPage() {
         ) : !data ? (
           <ErrorState error={error} onRetry={refresh} />
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <SummaryCards summary={data.summary} />
 
             <NoticeBanner meta={data.meta} summary={data.summary} error={error} />
 
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <AllocationChart sectors={data.sectors} />
               </div>
@@ -56,7 +56,7 @@ export default function DashboardPage() {
               totalHoldings={data.holdings.length}
             />
 
-            <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-4 text-[0.6875rem] text-text-muted">
+            <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-4 pt-1 text-[0.75rem] text-text-muted">
               <span className="tnum">
                 Prices updated {formatTime(data.meta.priceUpdatedAt)}
               </span>
@@ -86,7 +86,7 @@ function ErrorState({
   onRetry: () => void;
 }) {
   return (
-    <div className="mx-auto max-w-md rounded-xl border border-border-subtle bg-surface-raised p-8 text-center shadow-[var(--shadow-card)]">
+    <div className="card mx-auto max-w-md p-8 text-center">
       <span
         aria-hidden="true"
         className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-loss-soft text-loss"
@@ -99,13 +99,13 @@ function ErrorState({
       <h2 className="mt-4 text-sm font-semibold text-text-primary">
         Could not load the portfolio
       </h2>
-      <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+      <p className="mt-2 text-[0.8125rem] leading-relaxed text-text-secondary">
         {error ?? "The portfolio service did not respond."}
       </p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-5 rounded-lg bg-accent px-4 py-2 text-xs font-medium text-white transition-opacity hover:opacity-90"
+        className="icon-button mt-5 h-auto w-auto border-transparent bg-accent px-4 py-2 text-[0.8125rem] font-medium text-white hover:bg-accent hover:text-white"
       >
         Try again
       </button>

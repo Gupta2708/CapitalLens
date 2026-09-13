@@ -9,6 +9,9 @@ import { trendOf } from "@/lib/format/currency";
  * glyph and an explicit sign, so the table stays readable in greyscale and for
  * readers with colour-vision deficiency. Missing data renders muted, never red,
  * because "we could not price this" is not a loss.
+ *
+ * The delta-gain / delta-loss classes let an ancestor (a hovered table row)
+ * strengthen the colour without this component knowing anything about hover.
  */
 export function Delta({
   value,
@@ -27,9 +30,9 @@ export function Delta({
   const colour = isMissing
     ? "text-text-muted"
     : trend === "up"
-      ? "text-gain"
+      ? "text-gain delta-gain"
       : trend === "down"
-        ? "text-loss"
+        ? "text-loss delta-loss"
         : "text-text-secondary";
 
   const glyph = trend === "up" ? "▲" : trend === "down" ? "▼" : null;

@@ -37,11 +37,12 @@ export function DashboardHeader({
 
   return (
     <header className="sticky top-0 z-30 border-b border-border-subtle bg-surface-base/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-2.5">
+      <div className="mx-auto flex min-h-[3.875rem] max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:px-5 lg:px-8">
+        {/* Brand. The icon tile brightens on hover; nothing rotates or bounces. */}
+        <div className="group flex items-center gap-2.5">
           <span
             aria-hidden="true"
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-soft text-accent"
+            className="flex h-[1.875rem] w-[1.875rem] items-center justify-center rounded-lg bg-accent-soft text-accent transition-colors duration-150 group-hover:bg-accent group-hover:text-white"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 17l5-6 4 4 5-7" />
@@ -49,43 +50,51 @@ export function DashboardHeader({
             </svg>
           </span>
           <div className="leading-tight">
-            <h1 className="text-[0.9375rem] font-semibold tracking-tight text-text-primary">
+            <h1 className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-text-primary">
               CapitalLens
             </h1>
-            <p className="text-[0.6875rem] text-text-muted">
+            <p className="text-[0.75rem] text-text-muted">
               Live portfolio &amp; sector performance
             </p>
           </div>
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {/* Live-state pill. Three distinct states, never ambiguous. */}
+          {/* Status pill. Four distinct states, never ambiguous. */}
           {hasError ? (
             <Badge tone="loss" title="The most recent refresh failed">
-              <span aria-hidden="true">{"●"}</span> Reconnecting
+              <span className="live-dot" aria-hidden="true" /> Reconnecting
             </Badge>
           ) : priceProvider === "error" ? (
-            <Badge tone="warn" title="The price provider is not responding. Holdings and cost basis are unaffected.">
-              <span aria-hidden="true">{"●"}</span> Prices unavailable
+            <Badge
+              tone="warn"
+              title="The price provider is not responding. Holdings and cost basis are unaffected."
+            >
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
+              Prices unavailable
             </Badge>
           ) : priceProvider === "partial" ? (
             <Badge tone="warn" title="Some holdings could not be priced">
-              <span aria-hidden="true">{"●"}</span> Partial
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
+              Partial
             </Badge>
           ) : !isPolling ? (
-            <Badge tone="neutral" title="Polling is suspended while this tab is in the background">
-              <span aria-hidden="true">{"●"}</span> Paused
+            <Badge
+              tone="neutral"
+              title="Polling is suspended while this tab is in the background"
+            >
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
+              Paused
             </Badge>
           ) : (
             <Badge tone="gain" title={`Auto-refreshing every ${intervalSeconds} seconds`}>
-              <span aria-hidden="true" className={isRefreshing ? "pulse-dot" : ""}>
-                {"●"}
-              </span>
-              {isRefreshing ? "Updating" : "Live"}
+              {/* Only the ring pulses; the dot itself stays steady. */}
+              <span className="live-dot" aria-hidden="true" />
+              Live
             </Badge>
           )}
 
-          <span className="hidden text-[0.6875rem] text-text-muted sm:inline tnum">
+          <span className="tnum hidden text-[0.75rem] text-text-muted sm:inline">
             Updated {formatTime(meta?.priceUpdatedAt)}
           </span>
 
@@ -95,7 +104,7 @@ export function DashboardHeader({
             disabled={isRefreshing}
             title="Refresh now"
             aria-label="Refresh now"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border-subtle bg-surface-overlay text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary disabled:opacity-50"
+            className="icon-button"
           >
             <svg
               width="14"
@@ -106,7 +115,10 @@ export function DashboardHeader({
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className={isRefreshing ? "animate-spin" : ""}
+              /* The spin is bound to the in-flight state, so repeated clicks
+                 cannot stack or restart it -- the button is disabled while a
+                 request is running. */
+              className={isRefreshing ? "icon-spinning" : "icon-rotate"}
               aria-hidden="true"
             >
               <path d="M21 12a9 9 0 1 1-3-6.7" />

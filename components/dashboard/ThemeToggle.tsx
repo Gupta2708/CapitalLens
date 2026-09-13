@@ -11,7 +11,8 @@ const STORAGE_KEY = "capitallens-theme";
  * That attribute is written before hydration by the inline script in
  * layout.tsx, so React is not its owner -- it is an external system. Reading it
  * with useSyncExternalStore rather than syncing it into state in an effect
- * keeps a single source of truth and avoids a cascading render on mount.
+ * keeps one source of truth, avoids a cascading render on mount, and means the
+ * control can never disagree with the page it is describing.
  */
 function subscribe(onChange: () => void): () => void {
   const observer = new MutationObserver(onChange);
@@ -35,38 +36,80 @@ function getServerSnapshot(): Theme {
 
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const isLight = theme === "light";
 
   const toggle = useCallback(() => {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
+    const next: Theme = isLight ? "dark" : "light";
+    const root = document.documentElement;
+
+    /*
+     * Enable the cross-theme colour transition only for the length of the
+     * switch. It lives on a stamped attribute rather than permanently on every
+     * element, because a blanket transition would override the per-element
+     * transitions that carry transforms and would make hover feedback sluggish.
+     */
+    root.setAttribute("data-theme-switching", "");
+    root.setAttribute("data-theme", next);
+    window.setTimeout(() => root.removeAttribute("data-theme-switching"), 260);
+
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // Storage can be blocked; the theme still applies for this session.
     }
-  }, [theme]);
-
-  const nextLabel = theme === "dark" ? "light" : "dark";
+  }, [isLight]);
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={`Switch to ${nextLabel} theme`}
-      title={`Switch to ${nextLabel} theme`}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border-subtle bg-surface-overlay text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+      /* switch semantics: aria-checked communicates the state itself, rather
+         than relying on the label to describe what a press would do. */
+      role="switch"
+      aria-checked={isLight}
+      aria-label="Light theme"
+      title={`Switch to ${isLight ? "dark" : "light"} theme`}
+      className="theme-switch"
     >
-      {theme === "dark" ? (
-        // Sun: clicking switches to light.
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-        </svg>
-      ) : (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-        </svg>
-      )}
+      {/* Track icons sit behind the knob and mark each end of the travel. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 flex items-center justify-between px-[0.3125rem] text-text-muted"
+      >
+        <MoonIcon />
+        <SunIcon />
+      </span>
+
+      <span
+        className="theme-knob"
+        aria-hidden="true"
+        /* The knob slides the width of the track minus its own width. */
+        style={{ ["--knob-x" as string]: isLight ? "1.25rem" : "0rem" }}
+      >
+        <span className={`theme-icon ${isLight ? "theme-icon-hidden" : "theme-icon-shown"}`}>
+          <MoonIcon />
+        </span>
+        <span className={`theme-icon ${isLight ? "theme-icon-shown" : "theme-icon-hidden"}`}>
+          <SunIcon />
+        </span>
+      </span>
     </button>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.5" />
+      <path d="M12 1.5v2M12 20.5v2M4 4l1.5 1.5M18.5 18.5L20 20M1.5 12h2M20.5 12h2M4 20l1.5-1.5M18.5 5.5L20 4" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+    </svg>
   );
 }

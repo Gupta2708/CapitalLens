@@ -36,21 +36,21 @@ const COLUMNS: Array<{
   hint?: string;
 }> = [
   { key: "name", label: "Stock", align: "left" },
-  { key: null, label: "NSE/BSE", align: "left", hint: "Code as given in the source workbook" },
+  { key: null, label: "NSE/BSE", align: "left", hint: "Exchange code exactly as given in the source workbook" },
   { key: null, label: "Buy Price", align: "right" },
   { key: null, label: "Qty", align: "right" },
   { key: "investment", label: "Investment", align: "right" },
   { key: "portfolioPct", label: "Portfolio %", align: "right" },
-  { key: "cmp", label: "CMP", align: "right", hint: "Current market price from Yahoo Finance" },
+  { key: "cmp", label: "CMP", align: "right", hint: "Current market price, live from Yahoo Finance" },
   { key: "presentValue", label: "Present Value", align: "right" },
   { key: "gainLoss", label: "Gain / Loss", align: "right" },
   { key: "gainLossPct", label: "Return %", align: "right" },
-  { key: "peRatio", label: "P/E", align: "right", hint: "Trailing P/E from Google Finance" },
+  { key: "peRatio", label: "P/E", align: "right", hint: "Trailing price/earnings ratio, from Google Finance" },
   {
     key: null,
     label: "Latest Earnings (EPS)",
     align: "right",
-    hint: "The workbook's Latest Earnings column is Google Finance EPS",
+    hint: "Earnings per share, from Google Finance. The workbook labels this column Latest Earnings.",
   },
 ];
 
@@ -83,7 +83,10 @@ function PriceCell({ holding }: { holding: PortfolioHoldingView }) {
   const flash = useFlashOnChange(holding.cmp);
 
   return (
-    <td className={`px-3 py-2 text-right ${flash}`}>
+    <td
+      className={`px-3 py-2 text-right ${flash}`}
+      title={holding.cmp === null ? "No live price available for this symbol" : undefined}
+    >
       <span className="tnum text-text-primary">{formatPrice(holding.cmp)}</span>
       {holding.quoteFreshness === "stale" && (
         <span className="ml-1.5 align-middle">
@@ -104,7 +107,7 @@ function HoldingRow({ holding }: { holding: PortfolioHoldingView }) {
       {/* Pinned identity column: the row stays identifiable while scrolling. */}
       <th
         scope="row"
-        className="sticky left-0 z-10 whitespace-nowrap bg-surface-raised px-3 py-2 text-left font-medium text-text-primary"
+        className="holding-name sticky left-0 z-10 whitespace-nowrap bg-surface-raised px-3 py-2 text-left font-medium"
       >
         {holding.name}
         {holding.pricedOnFallbackExchange && holding.pricedOn && (
@@ -146,10 +149,24 @@ function HoldingRow({ holding }: { holding: PortfolioHoldingView }) {
       <td className="px-3 py-2 text-right">
         <Delta value={holding.gainLossPct} format={formatSignedPercent} />
       </td>
-      <td className="tnum px-3 py-2 text-right text-text-secondary">
+      <td
+        className="tnum px-3 py-2 text-right text-text-secondary"
+        title={
+          holding.peRatio === null
+            ? "Google Finance does not publish a P/E for this listing"
+            : undefined
+        }
+      >
         {formatNumber(holding.peRatio)}
       </td>
-      <td className="tnum px-3 py-2 text-right text-text-secondary">
+      <td
+        className="tnum px-3 py-2 text-right text-text-secondary"
+        title={
+          holding.latestEarningsEps === null
+            ? "Google Finance does not publish EPS for this listing"
+            : undefined
+        }
+      >
         {formatNumber(holding.latestEarningsEps)}
       </td>
     </tr>
@@ -261,11 +278,11 @@ export function PortfolioTable({
   }
 
   return (
-    <section className="rounded-xl border border-border-subtle bg-surface-raised shadow-[var(--shadow-card)]">
-      <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle px-5 py-4">
+    <section className="card overflow-hidden">
+      <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle px-5 py-3.5">
         <div>
           <h2 className="text-sm font-semibold text-text-primary">Holdings</h2>
-          <p className="mt-0.5 text-[0.6875rem] text-text-muted">
+          <p className="mt-0.5 text-[0.75rem] text-text-muted">
             {query
               ? `${matchCount} of ${totalHoldings} holdings match`
               : `${totalHoldings} holdings across ${sectors.length} sectors`}
@@ -277,12 +294,12 @@ export function PortfolioTable({
             <button
               type="button"
               onClick={() => setSortKey(null)}
-              className="text-[0.6875rem] text-text-muted underline-offset-2 hover:text-text-secondary hover:underline"
+              className="text-[0.75rem] text-text-muted underline-offset-2 transition-colors hover:text-text-secondary hover:underline"
             >
               Clear sort
             </button>
           )}
-          <label className="relative">
+          <label className="search-field relative flex items-center">
             <span className="sr-only">Search holdings</span>
             <svg
               width="14"
@@ -293,7 +310,7 @@ export function PortfolioTable({
               strokeWidth="2"
               strokeLinecap="round"
               aria-hidden="true"
-              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
+              className="search-icon pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
             >
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3.5-3.5" />
@@ -303,7 +320,7 @@ export function PortfolioTable({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search stock or code"
-              className="w-44 rounded-lg border border-border-subtle bg-surface-overlay py-1.5 pl-8 pr-3 text-xs text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none sm:w-56"
+              className="w-44 bg-transparent py-[0.4375rem] pl-8 pr-3 text-[0.8125rem] text-text-primary placeholder:text-text-muted sm:w-56"
             />
           </label>
         </div>
@@ -351,12 +368,11 @@ export function PortfolioTable({
                       <button
                         type="button"
                         onClick={() => toggleSort(column.key as SortKey)}
-                        className={`inline-flex items-center gap-1 hover:text-text-secondary ${
-                          isSorted ? "text-text-primary" : ""
-                        }`}
+                        className="sort-button"
+                        data-active={isSorted}
                       >
                         {column.label}
-                        <span aria-hidden="true" className="text-[0.6em]">
+                        <span aria-hidden="true" className="sort-glyph">
                           {isSorted ? (sortDirection === "asc" ? "▲" : "▼") : "⇅"}
                         </span>
                       </button>
@@ -382,13 +398,13 @@ export function PortfolioTable({
         </table>
 
         {matchCount === 0 && (
-          <p className="px-5 py-10 text-center text-xs text-text-muted">
+          <p className="px-5 py-10 text-center text-[0.8125rem] text-text-muted">
             No holdings match {`"${query}"`}.
           </p>
         )}
       </div>
 
-      <p className="border-t border-border-subtle px-5 py-3 text-[0.6875rem] leading-relaxed text-text-muted">
+      <p className="border-t border-border-subtle px-5 py-3 text-[0.75rem] leading-relaxed text-text-muted">
         {EM_DASH} indicates a value the provider did not return. Prices come from
         Yahoo Finance; P/E and EPS from Google Finance. Both are unofficial
         sources and may be delayed.

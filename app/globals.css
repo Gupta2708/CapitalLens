@@ -1,58 +1,87 @@
 @import "tailwindcss";
 
-/*
- * Design tokens.
- *
- * Every colour is defined once on :root (the dark palette, since dark is the
- * default) and overridden inside [data-theme="light"]. Nothing in a component
- * hardcodes a hex value, so the theme toggle is a single attribute flip on
- * <html> with no per-component branching.
- */
+/* ==========================================================================
+   Motion tokens
+   --------------------------------------------------------------------------
+   One vocabulary for every interaction in the app. Durations stay inside the
+   120-220ms band for anything the pointer triggers, so feedback reads as
+   immediate rather than animated. Nothing here loops.
+   ========================================================================== */
+:root {
+  --duration-fast: 120ms;
+  --duration-normal: 190ms;
+  --duration-slow: 320ms;
+
+  /* Standard: symmetric, for colour and background changes. */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Out: decelerating, for movement that should feel like it settles. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==========================================================================
+   Colour tokens
+   --------------------------------------------------------------------------
+   Dark is the default and lives on :root; [data-theme="light"] overrides it.
+   No component hardcodes a colour, so the toggle is one attribute flip.
+
+   Surfaces are three deliberate levels:
+     0  page ground
+     1  panels and cards
+     2  interactive inner rows, controls, hover states
+   ========================================================================== */
 :root {
   color-scheme: dark;
 
-  /* Surfaces, from furthest back to closest to the reader. */
-  --surface-base: #0b0f16;
-  --surface-raised: #121823;
-  --surface-overlay: #182031;
-  --surface-hover: #1b2434;
-  /* Sector banding inside the table. Must differ from the card surface in BOTH
-     themes -- on light, --surface-overlay equals the card, so the band vanished. */
-  --surface-band: #1a2334;
+  --surface-0: #0a0e15;
+  --surface-1: #111722;
+  --surface-2: #19212f;
+  --surface-3: #1f2937;
 
-  /* Hairlines. Deliberately low-contrast: structure should be felt, not seen. */
-  --border-subtle: #1e2839;
-  --border-strong: #2c3950;
+  /* Aliases kept so existing utility names keep working. */
+  --surface-base: var(--surface-0);
+  --surface-raised: var(--surface-1);
+  --surface-overlay: var(--surface-2);
+  --surface-hover: var(--surface-3);
+  --surface-band: #161e2b;
 
-  /* Text ramp. */
+  /* Borders: structure should be felt, not seen -- until you interact. */
+  --border-subtle: #1d2636;
+  --border-strong: #2a374d;
+  --border-hover: #3a4a64;
+
   --text-primary: #eef2f8;
-  --text-secondary: #9aa8bd;
-  --text-muted: #63728a;
+  --text-secondary: #97a5ba;
+  --text-muted: #616f87;
 
-  /* Performance colours. Paired with a glyph everywhere -- never colour alone. */
+  /* Performance colours. Always paired with a glyph -- never colour alone. */
   --gain: #34d399;
+  --gain-strong: #6ee7b7;
   --gain-soft: rgba(52, 211, 153, 0.12);
+  --gain-softer: rgba(52, 211, 153, 0.07);
+
   --loss: #fb7185;
+  --loss-strong: #fda4af;
   --loss-soft: rgba(251, 113, 133, 0.12);
+  --loss-softer: rgba(251, 113, 133, 0.07);
 
   --accent: #60a5fa;
+  --accent-strong: #93c5fd;
   --accent-soft: rgba(96, 165, 250, 0.12);
+  --accent-ring: rgba(96, 165, 250, 0.28);
+
   --warn: #fbbf24;
-  --warn-soft: rgba(251, 191, 36, 0.12);
+  --warn-soft: rgba(251, 191, 36, 0.1);
+  --warn-border: rgba(251, 191, 36, 0.28);
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.22);
+  /* Elevation. Dark mode leans on surface luminance; shadow stays restrained. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.28);
 
-  /*
-   * Categorical series colours for the sector chart, in fixed slot order.
-   *
-   * Taken from the reference categorical palette, deliberately skipping its
-   * green and red slots: those hues carry gain/loss meaning everywhere else on
-   * this page and must not double as a category identity.
-   *
-   * Validated as a set against this surface -- lightness band, chroma floor,
-   * adjacent-pair CVD separation (worst 8.4 protan), normal-vision separation
-   * (worst 19.3) and >=3:1 contrast all pass in dark mode.
-   */
+  /* Categorical series for the sector chart, in fixed slot order.
+     The reference palette's green and red slots are deliberately skipped:
+     those hues already mean gain and loss everywhere else on this page.
+     Validated in both themes for lightness band, chroma, adjacent-pair CVD
+     separation and contrast. */
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
@@ -64,37 +93,53 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  --surface-base: #f6f7f9;
-  --surface-raised: #ffffff;
-  --surface-overlay: #ffffff;
-  --surface-hover: #f1f4f8;
-  --surface-band: #eceff4;
+  /* Designed for light, not inverted from dark: a slightly cool off-white
+     ground so near-white cards read as raised without needing heavy shadow. */
+  --surface-0: #f5f7fa;
+  --surface-1: #ffffff;
+  --surface-2: #f4f6f9;
+  --surface-3: #eef1f6;
 
-  --border-subtle: #e3e8ef;
-  --border-strong: #cdd5e0;
+  --surface-base: var(--surface-0);
+  --surface-raised: var(--surface-1);
+  --surface-overlay: var(--surface-2);
+  --surface-hover: var(--surface-3);
+  --surface-band: #eef1f6;
 
-  --text-primary: #111827;
-  --text-secondary: #556274;
-  --text-muted: #7d8899;
+  --border-subtle: #e4e8ee;
+  --border-strong: #cfd6e0;
+  --border-hover: #b3bdcc;
 
-  /* Darker than the dark-theme pair so both clear 4.5:1 on their own ground. */
+  /* Deep slate rather than pure black -- easier to read at small sizes. */
+  --text-primary: #16202e;
+  --text-secondary: #556172;
+  --text-muted: #7a8698;
+
+  /* Stepped for a light ground: both clear 4.5:1 as text on white. */
   --gain: #047857;
+  --gain-strong: #065f46;
   --gain-soft: rgba(4, 120, 87, 0.1);
+  --gain-softer: rgba(4, 120, 87, 0.055);
+
   --loss: #be123c;
-  --loss-soft: rgba(190, 18, 60, 0.1);
+  --loss-strong: #9f1239;
+  --loss-soft: rgba(190, 18, 60, 0.09);
+  --loss-softer: rgba(190, 18, 60, 0.05);
 
   --accent: #1d4ed8;
-  --accent-soft: rgba(29, 78, 216, 0.1);
+  --accent-strong: #1e40af;
+  --accent-soft: rgba(29, 78, 216, 0.09);
+  --accent-ring: rgba(29, 78, 216, 0.22);
+
   --warn: #a16207;
-  --warn-soft: rgba(161, 98, 7, 0.12);
+  --warn-soft: rgba(161, 98, 7, 0.09);
+  --warn-border: rgba(161, 98, 7, 0.26);
 
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05), 0 6px 18px rgba(16, 24, 40, 0.06);
+  --shadow-1: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-2: 0 2px 4px rgba(16, 24, 40, 0.06), 0 8px 20px rgba(16, 24, 40, 0.07);
 
-  /*
-   * The same six hues re-stepped for the light surface -- a selected palette,
-   * not an automatic flip. Three of these sit below 3:1 on white, so the chart
-   * carries visible direct labels (the legend names and values) as relief.
-   */
+  /* The same six hues re-stepped for a light surface -- a selected palette.
+     Three fall below 3:1 here, so the chart carries direct labels as relief. */
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
@@ -111,6 +156,7 @@
   --color-surface-band: var(--surface-band);
   --color-border-subtle: var(--border-subtle);
   --color-border-strong: var(--border-strong);
+  --color-border-hover: var(--border-hover);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
@@ -127,41 +173,86 @@
 }
 
 body {
-  background: var(--surface-base);
+  background: var(--surface-0);
   color: var(--text-primary);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  /* Never let the dense table push the whole page sideways. */
+  font-size: 0.875rem;
+  /* The dense table scrolls inside its own container; the page never does. */
   overflow-x: hidden;
 }
 
-/*
- * Tabular figures for every number on the page.
- *
- * Proportional digits change width as prices tick, so a refreshing column
- * visibly jitters. Tabular figures give each digit the same advance width and
- * the column stays perfectly still.
- */
+/* --------------------------------------------------------------------------
+   Theme switching
+   --------------------------------------------------------------------------
+   The crossfade is scoped to the moment of the switch instead of living on
+   every element permanently. A blanket `transition` on `*` would otherwise
+   override the per-element transitions that carry transforms, and would make
+   hover feedback sluggish. ThemeToggle stamps this attribute, then clears it.
+   `transition: all` is avoided throughout -- only the properties that actually
+   change between themes are listed.
+   -------------------------------------------------------------------------- */
+[data-theme-switching],
+[data-theme-switching] * {
+  transition:
+    background-color var(--duration-normal) var(--ease-standard),
+    border-color var(--duration-normal) var(--ease-standard),
+    color 160ms var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard) !important;
+  transition-delay: 0s !important;
+}
+
+/* ==========================================================================
+   Typography helpers
+   ========================================================================== */
+
+/* Tabular figures for every number on the page. Proportional digits change
+   width as prices tick, so a refreshing column visibly jitters; these hold
+   each digit to the same advance width and the column stays still. */
 .tnum {
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-/* Micro-caps used for column headers and card labels. */
+/* Small uppercase label. Reserved for metadata, table headings and card
+   labels -- never for descriptive prose. Tracking is deliberately modest;
+   wide tracking at this size costs more legibility than it buys. */
 .label-caps {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.045em;
   text-transform: uppercase;
   color: var(--text-muted);
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 
-/*
- * Update flash.
- *
- * A refreshed cell tints for ~700ms and fades out. It draws the eye to what
- * actually changed without moving anything, which is what makes a 15-second
- * refresh readable rather than distracting.
- */
+/* ==========================================================================
+   Entrance
+   --------------------------------------------------------------------------
+   Runs once on first paint, never on a polling refresh. Movement is 5px --
+   enough to register as arriving, too little to read as animation.
+   ========================================================================== */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise-in {
+  animation: rise-in var(--duration-slow) var(--ease-out) backwards;
+}
+
+/* ==========================================================================
+   Live-value flash
+   --------------------------------------------------------------------------
+   A refreshed cell tints briefly and fades. This is what makes a 15-second
+   refresh legible: it marks what actually moved without shifting anything.
+   Only cells whose value changed receive it.
+   ========================================================================== */
 @keyframes flash-gain {
   0% { background-color: var(--gain-soft); }
   100% { background-color: transparent; }
@@ -172,50 +263,291 @@ body {
   100% { background-color: transparent; }
 }
 
-.flash-gain { animation: flash-gain 700ms ease-out; }
-.flash-loss { animation: flash-loss 700ms ease-out; }
+.flash-gain { animation: flash-gain 620ms var(--ease-out); }
+.flash-loss { animation: flash-loss 620ms var(--ease-out); }
 
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+/* Live indicator: the ring pulses, the dot itself stays put and fully opaque,
+   so the badge reads as steady rather than blinking. */
+@keyframes live-ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  70% { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
 }
 
-.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+.live-dot {
+  position: relative;
+  display: inline-flex;
+  height: 6px;
+  width: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
 
-@keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: currentColor;
+  animation: live-ring 2.4s var(--ease-out) infinite;
+}
+
+/* ==========================================================================
+   Skeleton
+   --------------------------------------------------------------------------
+   Matches the final geometry so nothing reflows when data lands. A gentle
+   opacity wave rather than a travelling gradient.
+   ========================================================================== */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--surface-raised) 0%,
-    var(--surface-hover) 50%,
-    var(--surface-raised) 100%
-  );
-  background-size: 800px 100%;
-  animation: shimmer 1.4s linear infinite;
+  background: var(--surface-2);
   border-radius: 0.375rem;
+  animation: skeleton-pulse 1.6s var(--ease-standard) infinite;
 }
 
-/* Respect the reader's motion preference. */
-@media (prefers-reduced-motion: reduce) {
-  .flash-gain,
-  .flash-loss,
-  .pulse-dot,
-  .skeleton {
-    animation: none;
+/* ==========================================================================
+   Interactive surfaces
+   ========================================================================== */
+
+/* Panel-level card. Hover feedback is gated behind a real pointer so touch
+   devices never latch into a stuck hover state after a tap. */
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-1);
+  transition:
+    transform var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard),
+    background-color var(--duration-normal) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-2);
+  }
+
+  /* The accent rail widens slightly instead of the card changing colour. */
+  .card-interactive:hover .card-rail {
+    opacity: 1;
+    width: 3px;
+  }
+
+  .card-interactive:hover .label-caps {
+    color: var(--text-secondary);
   }
 }
 
-/*
- * Table rules.
- *
- * The holdings table uses `border-separate` because a collapsed border model
- * breaks `position: sticky` on thead in Chrome. Borders therefore have to live
- * on the cells rather than on the rows, which is what these rules do.
- */
+.card-rail {
+  opacity: 0.75;
+  transition:
+    width var(--duration-normal) var(--ease-out),
+    opacity var(--duration-normal) var(--ease-standard);
+}
+
+/* Inner interactive row: level 2 surface, no movement, just a quiet wash. */
+.row-interactive {
+  border-radius: 0.5rem;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .row-interactive:hover {
+    background-color: var(--surface-2);
+  }
+}
+
+/* Icon button in the header. */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .icon-button:hover:not(:disabled) {
+    background: var(--surface-3);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
+
+  /* The icon nudges rather than the button moving. */
+  .icon-button:hover:not(:disabled) .icon-rotate {
+    transform: rotate(25deg);
+  }
+}
+
+.icon-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.icon-button:disabled {
+  cursor: default;
+}
+
+.icon-rotate {
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+/* One controlled rotation per refresh, restarted only when a request is
+   actually in flight -- it cannot be spammed by repeated clicks. */
+@keyframes spin-once {
+  to { transform: rotate(360deg); }
+}
+
+.icon-spinning {
+  animation: spin-once 900ms var(--ease-standard) infinite;
+}
+
+/* Touch targets stay finger-sized on coarse pointers. */
+@media (pointer: coarse) {
+  .icon-button {
+    height: 2.5rem;
+    width: 2.5rem;
+  }
+}
+
+/* ==========================================================================
+   Theme switch
+   ========================================================================== */
+.theme-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 1.75rem;
+  width: 3rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  padding: 0 0.1875rem;
+  transition:
+    background-color var(--duration-normal) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .theme-switch:hover {
+    border-color: var(--border-hover);
+    background: var(--surface-3);
+  }
+}
+
+.theme-switch:active .theme-knob {
+  transform: scale(0.94) translateX(var(--knob-x, 0));
+}
+
+.theme-knob {
+  position: absolute;
+  display: flex;
+  height: 1.25rem;
+  width: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-1);
+  color: var(--text-primary);
+  /* The knob slides; the icons inside it cross-fade and rotate. */
+  transition:
+    transform var(--duration-normal) var(--ease-out),
+    background-color var(--duration-normal) var(--ease-standard);
+  transform: translateX(var(--knob-x, 0));
+}
+
+.theme-icon {
+  position: absolute;
+  display: flex;
+  transition:
+    opacity var(--duration-normal) var(--ease-standard),
+    transform var(--duration-normal) var(--ease-out);
+}
+
+.theme-icon-hidden {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.6);
+}
+
+.theme-icon-shown {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+
+@media (pointer: coarse) {
+  .theme-switch {
+    height: 2rem;
+    width: 3.25rem;
+  }
+}
+
+/* ==========================================================================
+   Search field
+   ========================================================================== */
+.search-field {
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  border-radius: 0.5rem;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .search-field:hover {
+    border-color: var(--border-hover);
+  }
+}
+
+.search-field:focus-within {
+  border-color: var(--accent);
+  /* A 3px ring, not a glow. */
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.search-field:focus-within .search-icon {
+  color: var(--accent);
+  transform: scale(1.05);
+}
+
+.search-icon {
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.search-field input:focus {
+  outline: none;
+}
+
+/* ==========================================================================
+   Holdings table
+   --------------------------------------------------------------------------
+   `border-separate` is required: a collapsed border model breaks
+   `position: sticky` on thead in Chrome -- the header detaches and the first
+   body row renders underneath it. Borders therefore live on the cells.
+   ========================================================================== */
 .data-table thead th {
   border-bottom: 1px solid var(--border-strong);
 }
@@ -223,6 +555,7 @@ body {
 .data-table tbody th,
 .data-table tbody td {
   border-bottom: 1px solid var(--border-subtle);
+  transition: background-color var(--duration-fast) var(--ease-standard);
 }
 
 .data-table tbody tr.sector-row th,
@@ -232,25 +565,256 @@ body {
   background: var(--surface-band);
 }
 
-/* Hovering anywhere on a row lifts the pinned first cell with it. */
-.data-table tbody tr.holding-row:hover th,
-.data-table tbody tr.holding-row:hover td {
-  background: var(--surface-hover);
+@media (hover: hover) and (pointer: fine) {
+  .data-table tbody tr.sector-row:hover th,
+  .data-table tbody tr.sector-row:hover td {
+    background: var(--surface-3);
+  }
 }
 
-/* Restrained scrollbar for the horizontally scrolling table container. */
+/* Row hover. Background only -- lifting or resizing a row in a dense table
+   makes the whole grid jitter as the pointer travels down it. */
+@media (hover: hover) and (pointer: fine) {
+  .data-table tbody tr.holding-row:hover th,
+  .data-table tbody tr.holding-row:hover td {
+    background: var(--surface-2);
+  }
+
+  .data-table tbody tr.holding-row:hover .holding-name {
+    color: var(--text-primary);
+  }
+
+  /* 2px edge marker drawn as an inset shadow, so it costs no layout. */
+  .data-table tbody tr.holding-row:hover th:first-child {
+    box-shadow: inset 2px 0 0 0 var(--accent);
+  }
+
+  /* Performance figures strengthen slightly on their own row. */
+  .data-table tbody tr.holding-row:hover .delta-gain {
+    color: var(--gain-strong);
+  }
+
+  .data-table tbody tr.holding-row:hover .delta-loss {
+    color: var(--loss-strong);
+  }
+}
+
+.holding-name {
+  color: var(--text-secondary);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.delta-gain,
+.delta-loss {
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+/* Sortable column header affordance. */
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 0.25rem;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.sort-glyph {
+  font-size: 0.6em;
+  opacity: 0.45;
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sort-button:hover {
+    color: var(--text-primary);
+  }
+
+  .sort-button:hover .sort-glyph {
+    opacity: 0.9;
+  }
+}
+
+.sort-button[data-active="true"] {
+  color: var(--text-primary);
+}
+
+.sort-button[data-active="true"] .sort-glyph {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   Chart / legend linking
+   ========================================================================== */
+.legend-row {
+  border-radius: 0.375rem;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .legend-row:hover {
+    background-color: var(--surface-2);
+    transform: translateX(2px);
+  }
+}
+
+/* Non-hovered rows recede, but stay readable -- this is a de-emphasis, not
+   a hide. */
+.legend-row[data-dimmed="true"] {
+  opacity: 0.45;
+}
+
+.legend-row[data-active="true"] {
+  background-color: var(--surface-2);
+}
+
+.legend-swatch {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.legend-row[data-active="true"] .legend-swatch {
+  transform: scale(1.2);
+}
+
+/* Recharts draws sector paths; the transition keeps the hover emphasis smooth. */
+.recharts-sector {
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    filter var(--duration-fast) var(--ease-standard);
+}
+
+/* ==========================================================================
+   Movers
+   ========================================================================== */
+@media (hover: hover) and (pointer: fine) {
+  .mover-row:hover .mover-name {
+    color: var(--text-primary);
+  }
+
+  .mover-row:hover .mover-glyph {
+    transform: translateY(-2px);
+  }
+}
+
+.mover-name {
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.mover-glyph {
+  display: inline-block;
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+/* Proportional strength bar under each mover. Width is set inline. */
+.mover-bar {
+  height: 2px;
+  border-radius: 999px;
+  transition: width var(--duration-slow) var(--ease-out);
+}
+
+/* ==========================================================================
+   Notice banner
+   ========================================================================== */
+@keyframes notice-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
+.notice-banner {
+  animation: notice-in var(--duration-slow) var(--ease-out);
+}
+
+/* The icon settles once as the banner arrives, then never moves again. */
+@keyframes notice-icon-in {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.notice-icon {
+  animation: notice-icon-in 380ms var(--ease-out) 80ms backwards;
+}
+
+/* ==========================================================================
+   Focus
+   --------------------------------------------------------------------------
+   focus-visible only, so a mouse click never leaves a ring behind but every
+   keyboard path is clearly traceable.
+   ========================================================================== */
+:where(a, button, input, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.theme-switch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Scrollbars
+   ========================================================================== */
 .scroll-soft::-webkit-scrollbar { height: 10px; width: 10px; }
 .scroll-soft::-webkit-scrollbar-track { background: transparent; }
 .scroll-soft::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: 999px;
-  border: 3px solid var(--surface-raised);
+  border: 3px solid var(--surface-1);
+  transition: background-color var(--duration-fast) var(--ease-standard);
 }
-.scroll-soft::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+.scroll-soft::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
 
-/* Visible focus ring for keyboard users on every interactive control. */
-:where(a, button, input, [tabindex]):focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 0.25rem;
+/* ==========================================================================
+   Reduced motion
+   --------------------------------------------------------------------------
+   Movement and looping are removed; colour feedback is kept, because the
+   value-change flash carries information rather than decoration.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .rise-in,
+  .notice-banner,
+  .notice-icon,
+  .skeleton,
+  .icon-spinning,
+  .live-dot::after {
+    animation: none !important;
+  }
+
+  .live-dot::after {
+    display: none;
+  }
+
+  .card-interactive:hover,
+  .legend-row:hover,
+  .mover-row:hover .mover-glyph,
+  .icon-button:hover .icon-rotate,
+  .icon-button:active,
+  .theme-switch:active .theme-knob {
+    transform: none !important;
+  }
+
+  .flash-gain,
+  .flash-loss {
+    animation-duration: 1ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+  }
+}
+
+/* The hovered donut slice lifts outward. `transform-box: view-box` puts the
+   origin at the centre of the SVG viewport -- which is the centre of the donut
+   -- so the slice grows radially instead of sliding. */
+.recharts-sector.slice-active {
+  transform: scale(1.045);
+  transform-origin: center;
+  transform-box: view-box;
 }
