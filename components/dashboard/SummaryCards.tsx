@@ -43,7 +43,18 @@ function Card({
  */
 export function SummaryCards({ summary }: { summary: ValuationTotals }) {
   const isPartial = summary.completeness === "partial";
-  const trend = trendOf(summary.totalGainLoss);
+
+  /*
+   * With nothing priced, every valuation figure is genuinely unknown -- not
+   * zero. Showing a confident "0" would read as "your portfolio is worth
+   * nothing", so these fall back to an em-dash instead.
+   */
+  const hasValuation = summary.pricedHoldingsCount > 0;
+  const presentValue = hasValuation ? summary.totalPresentValue : null;
+  const gainLoss = hasValuation ? summary.totalGainLoss : null;
+  const returnPct = hasValuation ? summary.totalGainLossPct : null;
+
+  const trend = trendOf(gainLoss);
 
   const coverageNote = isPartial
     ? `${summary.pricedHoldingsCount} of ${summary.totalHoldingsCount} holdings priced`
@@ -65,12 +76,12 @@ export function SummaryCards({ summary }: { summary: ValuationTotals }) {
       <Card
         label="Current Value"
         accentClass="bg-accent"
-        value={formatCompactCurrency(summary.totalPresentValue)}
+        value={formatCompactCurrency(presentValue)}
         sub={
           isPartial ? (
             <span className="text-warn">{coverageNote}</span>
           ) : (
-            <span className="tnum">{formatCurrency(summary.totalPresentValue)}</span>
+            <span className="tnum">{formatCurrency(presentValue)}</span>
           )
         }
       />
@@ -79,11 +90,15 @@ export function SummaryCards({ summary }: { summary: ValuationTotals }) {
         label="Total Gain / Loss"
         accentClass={trend === "up" ? "bg-gain" : trend === "down" ? "bg-loss" : "bg-border-strong"}
         value={
-          <Delta value={summary.totalGainLoss} format={formatSignedCurrency} />
+          <Delta value={gainLoss} format={formatSignedCurrency} />
         }
         sub={
           <span>
-            {isPartial ? "On priced positions only" : "Against full cost basis"}
+            {!hasValuation
+              ? "No live prices available"
+              : isPartial
+                ? "On priced positions only"
+                : "Against full cost basis"}
           </span>
         }
       />
@@ -92,12 +107,14 @@ export function SummaryCards({ summary }: { summary: ValuationTotals }) {
         label="Total Return"
         accentClass={trend === "up" ? "bg-gain" : trend === "down" ? "bg-loss" : "bg-border-strong"}
         value={
-          <Delta value={summary.totalGainLossPct} format={formatSignedPercent} />
+          <Delta value={returnPct} format={formatSignedPercent} />
         }
         sub={
           <span className="tnum">
             {/* Naming the denominator is the point: it is the priced basis. */}
-            on {formatCurrency(summary.pricedInvestment)} invested
+            {hasValuation
+              ? `on ${formatCurrency(summary.pricedInvestment)} invested`
+              : "Awaiting live prices"}
           </span>
         }
       />

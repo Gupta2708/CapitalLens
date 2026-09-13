@@ -185,10 +185,18 @@ export async function buildPortfolio(): Promise<PortfolioResponse> {
   const notices: string[] = [];
 
   const unpricedCount = rows.length - summary.pricedHoldingsCount;
-  if (unpricedCount > 0) {
+  if (summary.pricedHoldingsCount === 0 && rows.length > 0) {
+    // Total outage reads differently from a partial one: there is no priced
+    // subset to qualify, so say the value cannot be computed at all rather
+    // than claiming it covers "0 holdings".
+    notices.push(
+      `Live prices are unavailable for all ${rows.length} holdings, so current value and returns cannot be calculated right now. ` +
+        `Your holdings and cost basis are unaffected.`,
+    );
+  } else if (unpricedCount > 0) {
     notices.push(
       `Live prices are unavailable for ${unpricedCount} of ${rows.length} holdings. ` +
-        `Portfolio value and returns below cover the ${summary.pricedHoldingsCount} priced holdings only.`,
+        `Portfolio value and returns below cover the other ${summary.pricedHoldingsCount} only.`,
     );
   }
 

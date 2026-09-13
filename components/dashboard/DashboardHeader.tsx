@@ -27,6 +27,14 @@ export function DashboardHeader({
 }) {
   const intervalSeconds = Math.round((meta?.refreshIntervalMs ?? 15_000) / 1000);
 
+  /*
+   * The pill reports DATA health, not just HTTP health. A provider outage still
+   * returns 200 with the static portfolio intact, so keying this off the request
+   * alone would keep showing a confident "Live" while every price on screen is
+   * an em-dash.
+   */
+  const priceProvider = meta?.providers.yahoo;
+
   return (
     <header className="sticky top-0 z-30 border-b border-border-subtle bg-surface-base/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6">
@@ -55,6 +63,14 @@ export function DashboardHeader({
           {hasError ? (
             <Badge tone="loss" title="The most recent refresh failed">
               <span aria-hidden="true">{"●"}</span> Reconnecting
+            </Badge>
+          ) : priceProvider === "error" ? (
+            <Badge tone="warn" title="The price provider is not responding. Holdings and cost basis are unaffected.">
+              <span aria-hidden="true">{"●"}</span> Prices unavailable
+            </Badge>
+          ) : priceProvider === "partial" ? (
+            <Badge tone="warn" title="Some holdings could not be priced">
+              <span aria-hidden="true">{"●"}</span> Partial
             </Badge>
           ) : !isPolling ? (
             <Badge tone="neutral" title="Polling is suspended while this tab is in the background">
